@@ -64,3 +64,12 @@ repository scanner before every push:
 node scripts/scan-secrets.mjs
 ```
 
+## License and ownership
+
+Guardora's original project material is proprietary and exclusively owned by
+Ata Ul Haq ([`@Atasatti`](https://github.com/Atasatti)). No use, copying,
+modification, hosting, or distribution is permitted without prior written
+authorization. See `LICENSE`.
+
+Third-party dependencies and AI models remain under their respective upstream
+licenses. See `THIRD_PARTY_NOTICES.md`.
