@@ -1,0 +1,50 @@
+import mongoose from "mongoose";
+
+const billSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: false,
+    },
+    dueDate: {
+      type: Date,
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    isCleared: {
+      type: Boolean,
+      default: false,
+    },
+    clearedAt: {
+      type: Date,
+      default: null,
+    },
+    billType: {
+      type: String,
+      enum: ["MAINTENANCE", "UTILITY", "FACILITY", "PENALTY", "OTHER"],
+      default: "OTHER",
+    },
+    month: {
+      type: String, // e.g., "2024-01" for January 2024
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+billSchema.index({ user: 1, dueDate: -1 });
+billSchema.index({ isCleared: 1, dueDate: 1 });
+
+export default mongoose.model("Bill", billSchema);
