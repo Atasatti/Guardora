@@ -1,6 +1,7 @@
 {
   "name": "fyp_backend",
   "version": "1.0.0",
+  "private": true,
   "description": "Guardora web administration API",
   "main": "src/server.js",
   "type": "module",
@@ -15,7 +16,7 @@
   },
   "keywords": [],
   "author": "Atasatti",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/Atasatti/Guardora/issues"
   },
