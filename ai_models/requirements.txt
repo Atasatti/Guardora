@@ -1,0 +1,5 @@
+huggingface-hub>=0.34,<2
+opencv-python>=4.10,<5
+torch>=2.5,<3
+ultralytics>=8.3,<9
+
