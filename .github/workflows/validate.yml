@@ -35,10 +35,13 @@ jobs:
         working-directory: fyp_web
         run: npm run lint
 
+      - name: Generate Next.js route types
+        working-directory: fyp_web
+        run: npx next typegen
+
       - name: Check web types
         working-directory: fyp_web
         run: npx tsc --noEmit
 
       - name: Verify AI model integrity
         run: python3 ai_models/verify_models.py
-
