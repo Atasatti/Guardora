@@ -1,0 +1,100 @@
+# Safe School AI - Configuration File
+# Recommended settings for Colab T4/RTX3060 GPU
+
+# Dataset paths
+data:
+  rwf_2000_root: "data/RWF-2000"  # Path to RWF-2000 dataset
+  school_dataset_root: "data/school_dataset"  # Optional: out-of-domain test set only (no finetune)
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+
+# Model configuration
+model:
+  backbone: "x3d_m"  # Options: x3d_s, x3d_m, x3d_l, r2plus1d_18
+  pretrained: true
+  num_classes: 2  # Binary: Violence / Non-Violence
+  dropout: 0.5
+  
+  # Layer freezing strategy
+  freeze_backbone: true  # Freeze backbone initially
+  freeze_epochs: 5  # Number of epochs to train only the head
+  unfreeze_layers: ["blocks.4", "blocks.5"]  # Layers to unfreeze after freeze_epochs
+
+# Video preprocessing
+video:
+  num_frames: 32  # Number of frames to sample per clip (matches trained models)
+  frame_size: [224, 224]  # Height x Width
+  fps: 30  # Target FPS for sampling
+  clip_duration: 4.0  # Duration in seconds
+  mean: [0.45, 0.45, 0.45]  # ImageNet stats
+  std: [0.225, 0.225, 0.225]
+
+# Data augmentation (for training)
+augmentation:
+  enabled: true
+  random_crop: true
+  random_horizontal_flip: true
+  horizontal_flip_prob: 0.5
+  color_jitter: true
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  hue: 0.1
+  temporal_jitter: true  # Random temporal sampling
+
+# Training hyperparameters - RWF-2000
+train_rwf:
+  batch_size: 8  # Adjust based on GPU memory (T4: 8, RTX3060: 12-16)
+  num_epochs: 30
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"  # Options: adam, sgd, adamw
+  scheduler: "step"  # Options: step, cosine, plateau
+  step_size: 10
+  gamma: 0.1
+  early_stopping_patience: 10
+  
+  # Mixed precision training (2x faster on modern GPUs)
+  mixed_precision: true  # Enable FP16 training
+  
+  # Loss function
+  loss: "cross_entropy"  # Options: cross_entropy, focal_loss
+  label_smoothing: 0.1
+  
+  # Checkpointing
+  save_frequency: 5  # Save checkpoint every N epochs
+  save_best_only: true
+
+# Inference settings
+inference:
+  device: "auto"  # Options: auto, cuda, cpu
+  batch_size: 1
+  confidence_threshold: 0.5
+  use_smoothing: true  # Temporal smoothing for video predictions
+  smoothing_window: 5  # Number of frames to smooth over
+  use_tta: false  # Test-time augmentation
+
+# Paths
+paths:
+  checkpoints_dir: "checkpoints"
+  logs_dir: "logs"
+  results_dir: "results"
+  export_dir: "exports"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  save_logs: true
+  log_file: "training.log"
+  tensorboard: false  # Enable TensorBoard logging
+  
+# Hardware
+device:
+  cuda_visible_devices: "0"  # GPU device ID
+  num_workers: 4  # DataLoader workers (adjust based on CPU cores)
+  pin_memory: true
+  mixed_precision: true  # Use AMP for faster training
+
+# Random seed for reproducibility
+seed: 42
