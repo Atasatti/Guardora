@@ -1,0 +1,37 @@
+# Dependencies and generated output
+**/node_modules/
+**/node_modules.icloud-backup/
+**/.next/
+**/.next.icloud-backup/
+**/out/
+**/dist/
+**/build/
+**/coverage/
+**/.cache/
+**/__pycache__/
+*.py[cod]
+
+# Local runtime data
+**/uploads/
+*.log
+*.pid
+*.tsbuildinfo
+
+# Secrets and machine-specific environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+.vercel/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local model output
+ai_models/runs/
+ai_models/outputs/
