@@ -1,0 +1,44 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            fyp_backend/package-lock.json
+            fyp_web/package-lock.json
+
+      - name: Scan for secrets and service URLs
+        run: node scripts/scan-secrets.mjs
+
+      - name: Check backend syntax
+        run: node scripts/check-backend-syntax.mjs
+
+      - name: Install web dependencies
+        working-directory: fyp_web
+        run: npm ci
+
+      - name: Lint web application
+        working-directory: fyp_web
+        run: npm run lint
+
+      - name: Check web types
+        working-directory: fyp_web
+        run: npx tsc --noEmit
+
+      - name: Verify AI model integrity
+        run: python3 ai_models/verify_models.py
+
