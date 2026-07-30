@@ -9,7 +9,14 @@ const reportSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["SOCIAL_POST", "MARKET_PRODUCT", "PERSON", "OTHER"],
+      enum: [
+        "SOCIAL_POST",
+        "MARKET_PRODUCT",
+        "PERSON",
+        "INCIDENT",
+        "DANGEROUS_AREA",
+        "OTHER",
+      ],
       required: true,
     },
     reason: {
@@ -27,8 +34,40 @@ const reportSchema = new mongoose.Schema(
     adminResponse: {
       type: String,
     },
+    targetId: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    media: [
+      {
+        url: { type: String, required: true },
+        type: {
+          type: String,
+          enum: ["IMAGE", "VIDEO"],
+          required: true,
+        },
+      },
+    ],
+    location: {
+      latitude: { type: Number, min: -90, max: 90, default: null },
+      longitude: { type: Number, min: -180, max: 180, default: null },
+      label: { type: String, default: null, trim: true },
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
+reportSchema.index({ status: 1, type: 1, createdAt: -1 });
+reportSchema.index({ reporter: 1, createdAt: -1 });
 
 export default mongoose.model("Report", reportSchema);
