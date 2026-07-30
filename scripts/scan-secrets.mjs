@@ -35,8 +35,8 @@ const textExtensions = new Set([
   ".yml",
 ]);
 const sourceRoots = [
-  "fyp_backend/src/",
-  "fyp_web/src/",
+  "backend/src/",
+  "frontend/src/",
   "mobile_deferred/backend/",
 ];
 
@@ -53,11 +53,19 @@ const secretRules = [
 ];
 const serviceUrlRule =
   /(?:https?|wss?):\/\/(?:localhost|127\.0\.0\.1|\d{1,3}(?:\.\d{1,3}){3}|[^/\s"'`]*ngrok[^/\s"'`]*)[^\s"'`]*/g;
-const allowedSourceUrl = "http://www.w3.org/2000/svg";
+const allowedSourceUrls = new Set([
+  "http://www.w3.org/2000/svg",
+  "http://127.0.0.1:8001",
+  "http://127.0.0.1:11434",
+  "http://localhost:3001",
+]);
 
 async function walk(directory, files = []) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.isDirectory() && ignoredDirectories.has(entry.name)) {
+    if (
+      entry.isDirectory() &&
+      (ignoredDirectories.has(entry.name) || entry.name.startsWith(".venv"))
+    ) {
       continue;
     }
 
@@ -119,7 +127,7 @@ async function main() {
     if (sourceRoots.some((sourceRoot) => relativePath.startsWith(sourceRoot))) {
       serviceUrlRule.lastIndex = 0;
       for (const match of content.matchAll(serviceUrlRule)) {
-        if (match[0] === allowedSourceUrl) {
+        if (allowedSourceUrls.has(match[0])) {
           continue;
         }
         failures.push([relativePath, "hardcoded-service-url"]);

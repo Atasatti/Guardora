@@ -1,9 +1,9 @@
-import Order from "../../../fyp_backend/src/models/order.js";
-import Product from "../../../fyp_backend/src/models/product.js";
-import Service from "../../../fyp_backend/src/models/service.js";
-import User from "../../../fyp_backend/src/models/user.js";
-import catchAsyncErrors from "../../../fyp_backend/src/middlewares/catchAsyncErrors.js";
-import ErrorHandler from "../../../fyp_backend/src/utils/ErrorHandler.js";
+import Order from "../../../backend/src/models/order.js";
+import Product from "../../../backend/src/models/product.js";
+import Service from "../../../backend/src/models/service.js";
+import User from "../../../backend/src/models/user.js";
+import catchAsyncErrors from "../../../backend/src/middlewares/catchAsyncErrors.js";
+import ErrorHandler from "../../../backend/src/utils/ErrorHandler.js";
 
 // Get all orders (with filters - PUBLIC)
 const getAllOrders = catchAsyncErrors(async (req, res) => {

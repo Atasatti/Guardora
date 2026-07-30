@@ -30,7 +30,9 @@ from pydantic import BaseModel, Field
 AI_MODELS_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_MODELS_DIR.parent
 VIDEO_DIR = Path(
-    os.getenv("GUARDORA_VIDEO_DIR", str(REPO_ROOT / "fyp_web" / "public" / "videos"))
+    os.getenv(
+        "GUARDORA_VIDEO_DIR", str(REPO_ROOT / "frontend" / "public" / "videos")
+    )
 ).resolve()
 FACE_GALLERY_DIR = Path(
     os.getenv("GUARDORA_FACE_GALLERY", str(AI_MODELS_DIR / "face_gallery"))

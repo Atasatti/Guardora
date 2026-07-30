@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 
 const root = path.resolve(import.meta.dirname, "..");
 const sourceDirectories = [
-  path.join(root, "fyp_backend", "src"),
+  path.join(root, "backend", "src"),
   path.join(root, "mobile_deferred", "backend"),
 ];
 
@@ -39,4 +39,3 @@ for (const directory of sourceDirectories) {
 if (!process.exitCode) {
   console.log("Backend JavaScript syntax check passed.");
 }
-

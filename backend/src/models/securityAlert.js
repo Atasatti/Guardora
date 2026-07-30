@@ -21,7 +21,7 @@ const securityAlertSchema = new mongoose.Schema(
       default: Date.now,
     },
     snapshotBase64: {
-      type: String, // We'll store the base64 string directly for simplicity in FYP
+      type: String, // Stored inline for the current alert snapshot workflow
       required: true,
     },
     details: {

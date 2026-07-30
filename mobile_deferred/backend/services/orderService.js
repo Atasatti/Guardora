@@ -1,7 +1,7 @@
-import Order from "../../../fyp_backend/src/models/order.js";
-import Product from "../../../fyp_backend/src/models/product.js";
-import Service from "../../../fyp_backend/src/models/service.js";
-import User from "../../../fyp_backend/src/models/user.js";
+import Order from "../../../backend/src/models/order.js";
+import Product from "../../../backend/src/models/product.js";
+import Service from "../../../backend/src/models/service.js";
+import User from "../../../backend/src/models/user.js";
 
 /**
  * Service layer for order operations

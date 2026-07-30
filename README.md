@@ -6,8 +6,8 @@ layer, and includes a reproducible computer-vision model pack.
 
 ## Repository layout
 
-- `fyp_backend/` — Express, MongoDB, and Socket.IO API for the web dashboard.
-- `fyp_web/` — Next.js dashboard using models, view-models, and views.
+- `backend/` — Express, MongoDB, and Socket.IO API for the web dashboard.
+- `frontend/` — Next.js dashboard using models, view-models, and views.
 - `ai_models/` — pinned AI weights, model cards, checksums, and verification
   tools.
 - `mobile_deferred/` — mobile-only backend code retained for a later phase and
@@ -20,21 +20,21 @@ See `ARCHITECTURE.md` for the dependency boundaries.
 Use Node.js 20 or newer and a local MongoDB instance.
 
 ```bash
-cp fyp_backend/.env.example fyp_backend/.env
-cp fyp_web/.env.example fyp_web/.env.local
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 ```
 
 Fill the local environment files, then install and start each application in a
 separate terminal:
 
 ```bash
-cd fyp_backend
+cd backend
 npm install
 npm run dev
 ```
 
 ```bash
-cd fyp_web
+cd frontend
 npm install
 npm run dev
 ```

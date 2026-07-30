@@ -1,6 +1,6 @@
-import Service from "../../../fyp_backend/src/models/service.js";
-import catchAsyncErrors from "../../../fyp_backend/src/middlewares/catchAsyncErrors.js";
-import ErrorHandler from "../../../fyp_backend/src/utils/ErrorHandler.js";
+import Service from "../../../backend/src/models/service.js";
+import catchAsyncErrors from "../../../backend/src/middlewares/catchAsyncErrors.js";
+import ErrorHandler from "../../../backend/src/utils/ErrorHandler.js";
 
 // Get all services
 const getAllServices = catchAsyncErrors(async (req, res) => {

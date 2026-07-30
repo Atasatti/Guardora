@@ -1,7 +1,7 @@
-import Comment from "../../../fyp_backend/src/models/comment.js";
-import Post from "../../../fyp_backend/src/models/post.js";
-import catchAsyncErrors from "../../../fyp_backend/src/middlewares/catchAsyncErrors.js";
-import ErrorHandler from "../../../fyp_backend/src/utils/ErrorHandler.js";
+import Comment from "../../../backend/src/models/comment.js";
+import Post from "../../../backend/src/models/post.js";
+import catchAsyncErrors from "../../../backend/src/middlewares/catchAsyncErrors.js";
+import ErrorHandler from "../../../backend/src/utils/ErrorHandler.js";
 
 // Get all comments for a post
 const getAllComments = catchAsyncErrors(async (req, res) => {
