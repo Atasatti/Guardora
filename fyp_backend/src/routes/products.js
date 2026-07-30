@@ -15,16 +15,16 @@ import upload from '../multer.js';
 const router = express.Router();
 
 // Get all products
-router.get('/', getAllProducts);
+router.get('/', isUserAuthenticated, getAllProducts);
 
 // Get user's products
-router.get('/user/:userId', getUserProducts);
+router.get('/user/:userId', isUserAuthenticated, getUserProducts);
 
 // Create a new product
 router.post('/', isUserAuthenticated, upload.array('images'), createProduct);
 
 // Get product by ID
-router.get('/:id', getProduct, getProductById);
+router.get('/:id', isUserAuthenticated, getProduct, getProductById);
 
 // Update a product
 router.put('/:id', isUserAuthenticated, getProduct, updateProduct);

@@ -15,16 +15,16 @@ import upload from '../multer.js';
 const router = express.Router();
 
 // Get all posts
-router.get('/', getAllPosts);
+router.get('/', isUserAuthenticated, getAllPosts);
 
 // Get user's posts
-router.get('/user/:userId', getUserPosts);
+router.get('/user/:userId', isUserAuthenticated, getUserPosts);
 
 // Create a new post
 router.post('/', isUserAuthenticated, upload.array('images'), createPost);
 
 // Get post by ID
-router.get('/:id', getPost, getPostById);
+router.get('/:id', isUserAuthenticated, getPost, getPostById);
 
 // Update a post
 router.put('/:id', isUserAuthenticated, getPost, updatePost);

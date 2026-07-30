@@ -3,7 +3,11 @@ import {
   getModerationCases,
   resolveCase,
 } from "../controllers/moderationController.js";
-import { isUserAuthenticated, authorizeRoles } from "../middlewares/auth.js";
+import {
+  authorizePermissions,
+  authorizeRoles,
+  isUserAuthenticated,
+} from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -12,6 +16,7 @@ router.get(
   "/",
   isUserAuthenticated,
   authorizeRoles("ADMIN", "MODERATOR"),
+  authorizePermissions("MANAGE_CONTENT"),
   getModerationCases
 );
 
@@ -20,6 +25,7 @@ router.patch(
   "/:id/resolve",
   isUserAuthenticated,
   authorizeRoles("ADMIN", "MODERATOR"),
+  authorizePermissions("MANAGE_CONTENT"),
   resolveCase
 );
 

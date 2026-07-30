@@ -5,6 +5,17 @@ import ModerationCase from "../models/moderationCase.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import { checkContentSafety } from "../utils/aiModerator.js";
+import { recordAudit } from "../utils/audit.js";
+
+const canManagePost = (req, post) => {
+  const authorId = post.author?._id || post.author;
+  return (
+    String(authorId) === String(req.user._id) ||
+    req.user.role === "ADMIN" ||
+    (req.user.role === "MODERATOR" &&
+      req.user.permissions?.includes("MANAGE_CONTENT"))
+  );
+};
 
 // Get all posts
 const getAllPosts = catchAsyncErrors(async (req, res) => {
@@ -31,9 +42,12 @@ const getPostById = catchAsyncErrors(async (req, res) => {
 });
 
 // Create a new post
-const createPost = catchAsyncErrors(async (req, res) => {
+const createPost = catchAsyncErrors(async (req, res, next) => {
   const { description } = req.body;
   const author = req.user.id;
+  if (!String(description || "").trim()) {
+    return next(new ErrorHandler("Post description is required", 400));
+  }
 
   // Get uploaded image URLs - use the same path format as profile picture
   const images = req.files
@@ -42,7 +56,7 @@ const createPost = catchAsyncErrors(async (req, res) => {
 
   const post = new Post({
     author,
-    description,
+    description: description.trim(),
     images: images, // Use the same path format: "uploads/filename.jpg"
   });
 
@@ -71,8 +85,12 @@ const createPost = catchAsyncErrors(async (req, res) => {
 });
 
 // Update an existing post
-const updatePost = catchAsyncErrors(async (req, res) => {
+const updatePost = catchAsyncErrors(async (req, res, next) => {
   const { description, images } = req.body;
+
+  if (!canManagePost(req, res.post)) {
+    return next(new ErrorHandler("Not authorized to update this post", 403));
+  }
 
   if (description != null) res.post.description = description;
   if (images != null) res.post.images = images;
@@ -83,9 +101,20 @@ const updatePost = catchAsyncErrors(async (req, res) => {
 });
 
 // Delete a post
-const deletePost = catchAsyncErrors(async (req, res) => {
+const deletePost = catchAsyncErrors(async (req, res, next) => {
+  if (!canManagePost(req, res.post)) {
+    return next(new ErrorHandler("Not authorized to delete this post", 403));
+  }
+
   await Comment.deleteMany({ _id: { $in: res.post.comments } });
+  const postId = res.post._id;
   await res.post.deleteOne();
+  await recordAudit({
+    req,
+    action: "POST_DELETED",
+    targetModel: "Post",
+    targetId: postId,
+  });
   res.json({ message: "Post deleted" });
 });
 
@@ -94,7 +123,7 @@ const likePost = catchAsyncErrors(async (req, res) => {
   const userId = req.user.id;
   const post = res.post;
 
-  if (post.likes.includes(userId)) {
+  if (post.likes.some((id) => String(id) === String(userId))) {
     post.likes.pull(userId);
     post.totalLikes -= 1;
   } else {

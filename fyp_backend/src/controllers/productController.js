@@ -4,12 +4,27 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 import User from "../models/user.js";
 import ModerationCase from "../models/moderationCase.js";
 import { checkContentSafety } from "../utils/aiModerator.js";
+import { recordAudit } from "../utils/audit.js";
+
+const canManageProduct = (req, product) => {
+  const sellerId = product.sellerId?._id || product.sellerId;
+  return (
+    String(sellerId) === String(req.user._id) ||
+    req.user.role === "ADMIN" ||
+    (req.user.role === "MODERATOR" &&
+      req.user.permissions?.includes("MANAGE_CONTENT"))
+  );
+};
 
 // Get all products
 const getAllProducts = catchAsyncErrors(async (req, res) => {
   const { query, category } = req.query;
 
-  let filter = {};
+  const canSeeClosedListings =
+    req.user.role === "ADMIN" ||
+    (req.user.role === "MODERATOR" &&
+      req.user.permissions?.includes("MANAGE_CONTENT"));
+  let filter = canSeeClosedListings ? {} : { status: "AVAILABLE" };
 
   if (query) {
     filter.$or = [
@@ -38,9 +53,19 @@ const getProductById = catchAsyncErrors(async (req, res) => {
 });
 
 // Create a new product
-const createProduct = catchAsyncErrors(async (req, res) => {
+const createProduct = catchAsyncErrors(async (req, res, next) => {
   const { title, description, price, category } = req.body;
   const sellerId = req.user.id;
+  const parsedPrice = Number(price);
+  if (
+    !title?.trim() ||
+    !description?.trim() ||
+    !category?.trim() ||
+    !Number.isFinite(parsedPrice) ||
+    parsedPrice < 0
+  ) {
+    return next(new ErrorHandler("Valid listing details are required", 400));
+  }
 
   // Get uploaded image URLs
   const images = req.files
@@ -51,7 +76,7 @@ const createProduct = catchAsyncErrors(async (req, res) => {
     sellerId,
     title,
     description,
-    price,
+    price: parsedPrice,
     category,
     images,
   });
@@ -89,8 +114,12 @@ const createProduct = catchAsyncErrors(async (req, res) => {
 });
 
 // Update an existing product
-const updateProduct = catchAsyncErrors(async (req, res) => {
+const updateProduct = catchAsyncErrors(async (req, res, next) => {
   const { title, description, price, category, images, status } = req.body;
+
+  if (!canManageProduct(req, res.product)) {
+    return next(new ErrorHandler("Not authorized to update this listing", 403));
+  }
 
   if (title != null) res.product.title = title;
   if (description != null) res.product.description = description;
@@ -105,11 +134,22 @@ const updateProduct = catchAsyncErrors(async (req, res) => {
 });
 
 // Delete a product
-const deleteProduct = catchAsyncErrors(async (req, res) => {
+const deleteProduct = catchAsyncErrors(async (req, res, next) => {
+  if (!canManageProduct(req, res.product)) {
+    return next(new ErrorHandler("Not authorized to delete this listing", 403));
+  }
+
   const sellerId = res.product.sellerId?._id || res.product.sellerId;
+  const productId = res.product._id;
   await res.product.deleteOne();
   await User.findByIdAndUpdate(sellerId, {
     $inc: { "sellerStats.totalProducts": -1 },
+  });
+  await recordAudit({
+    req,
+    action: "MARKETPLACE_LISTING_DELETED",
+    targetModel: "Product",
+    targetId: productId,
   });
   res.json({ message: "Product deleted" });
 });
@@ -124,8 +164,12 @@ const getUserProducts = catchAsyncErrors(async (req, res) => {
 });
 
 // Update product status
-const updateProductStatus = catchAsyncErrors(async (req, res) => {
+const updateProductStatus = catchAsyncErrors(async (req, res, next) => {
   const { status } = req.body;
+
+  if (!canManageProduct(req, res.product)) {
+    return next(new ErrorHandler("Not authorized to update this listing", 403));
+  }
 
   if (status != null) res.product.status = status;
 

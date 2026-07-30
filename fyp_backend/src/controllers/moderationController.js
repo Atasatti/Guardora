@@ -3,6 +3,8 @@ import Post from "../models/post.js";
 import Product from "../models/product.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import { createNotification } from "../utils/notifications.js";
+import { recordAudit } from "../utils/audit.js";
 
 // 1. Get All Open Cases
 const getModerationCases = catchAsyncErrors(async (req, res) => {
@@ -25,9 +27,32 @@ const resolveCase = catchAsyncErrors(async (req, res) => {
   if (action === "BAN") {
     // Delete the actual content from the database
     if (modCase.targetModel === "Post") {
-      await Post.findByIdAndDelete(modCase.targetId);
+      const post = await Post.findById(modCase.targetId);
+      if (post) {
+        await Post.deleteOne({ _id: post._id });
+        await createNotification({
+          recipient: post.author,
+          type: "SYSTEM",
+          title: "Post removed by moderation",
+          message: modCase.reason,
+          link: "/social",
+          metadata: { moderationCaseId: modCase._id },
+        });
+      }
     } else if (modCase.targetModel === "Product") {
-      await Product.findByIdAndDelete(modCase.targetId);
+      const product = await Product.findById(modCase.targetId);
+      if (product) {
+        product.status = "DELETED";
+        await product.save();
+        await createNotification({
+          recipient: product.sellerId,
+          type: "SYSTEM",
+          title: "Listing removed by moderation",
+          message: modCase.reason,
+          link: "/social",
+          metadata: { moderationCaseId: modCase._id },
+        });
+      }
     }
 
     modCase.status = "RESOLVED_BANNED";
@@ -39,6 +64,13 @@ const resolveCase = catchAsyncErrors(async (req, res) => {
   }
 
   await modCase.save();
+  await recordAudit({
+    req,
+    action: `MODERATION_CASE_${action}`,
+    targetModel: "ModerationCase",
+    targetId: modCase._id,
+    details: { targetModel: modCase.targetModel, targetId: modCase.targetId },
+  });
   res.json({ success: true, message: `Case resolved: ${action}` });
 });
 
