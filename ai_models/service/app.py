@@ -11,6 +11,7 @@ import base64
 import binascii
 from contextlib import contextmanager
 from dataclasses import dataclass
+import hmac
 import json
 import os
 from pathlib import Path
@@ -22,8 +23,16 @@ import urllib.error
 import urllib.request
 
 import cv2
+import jwt
 import numpy as np
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import BaseModel, Field
 
 
@@ -51,12 +60,67 @@ BACKEND_API_URL = os.getenv(
     "GUARDORA_BACKEND_API_URL", "http://127.0.0.1:4000/api"
 ).rstrip("/")
 AI_SERVICE_API_KEY = os.getenv("GUARDORA_AI_SERVICE_API_KEY", "")
+AI_STREAM_TOKEN_SECRET = os.getenv("GUARDORA_AI_STREAM_TOKEN_SECRET", "")
+STREAM_TOKEN_SCOPE = "ai-stream"
 
 app = FastAPI(
     title="Guardora Local AI Service",
     version="1.0.0",
     description="Local computer-vision inference with explicit model-license controls.",
 )
+
+if not AI_SERVICE_API_KEY:
+    print(
+        "WARNING: GUARDORA_AI_SERVICE_API_KEY is unset. API-to-service endpoints "
+        "will reject every request."
+    )
+if not AI_STREAM_TOKEN_SECRET:
+    print(
+        "WARNING: GUARDORA_AI_STREAM_TOKEN_SECRET is unset. Every stream "
+        "WebSocket will be refused."
+    )
+
+
+def require_service_key(request: Request) -> None:
+    """Guard for the endpoints only the Guardora API is meant to call."""
+    if not AI_SERVICE_API_KEY:
+        raise HTTPException(
+            status_code=503, detail="AI service authentication is not configured"
+        )
+    supplied = str(request.headers.get("x-ai-service-key") or "")
+    if not hmac.compare_digest(supplied, AI_SERVICE_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid AI service credentials")
+
+
+def _stream_token_claims(token: str, camera_id: str | None) -> dict[str, Any] | None:
+    """Validate a short-lived stream token minted by the Guardora API.
+
+    The API performs the ownership check before signing, so this only has to
+    confirm the signature, the expiry, the scope, and that the token names the
+    camera it is being used to open. A general token (camera=None) therefore
+    cannot open a camera, and a camera token cannot be replayed against a
+    different one.
+    """
+    if not AI_STREAM_TOKEN_SECRET or not token:
+        return None
+    try:
+        claims = jwt.decode(token, AI_STREAM_TOKEN_SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return None
+    if claims.get("scope") != STREAM_TOKEN_SCOPE:
+        return None
+    if claims.get("camera") != camera_id:
+        return None
+    return claims
+
+
+async def _authorize_stream(websocket: WebSocket, camera_id: str | None = None) -> bool:
+    """Reject unauthorised sockets during the handshake, before accept()."""
+    token = websocket.query_params.get("token", "")
+    if _stream_token_claims(token, camera_id) is None:
+        await websocket.close(code=1008)
+        return False
+    return True
 
 
 def _decode_data_url(value: str) -> np.ndarray:
@@ -550,7 +614,13 @@ def _sample_detection_video(
 
 
 @app.get("/health")
-def health() -> dict[str, Any]:
+def health(request: Request) -> dict[str, Any]:
+    # Stays public so platform liveness probes work, but runtime detail (model
+    # state, gallery size, filesystem paths) requires the service key.
+    if not AI_SERVICE_API_KEY or not hmac.compare_digest(
+        str(request.headers.get("x-ai-service-key") or ""), AI_SERVICE_API_KEY
+    ):
+        return {"status": "ok"}
     return {
         "status": "ok",
         "face": {
@@ -577,7 +647,7 @@ def health() -> dict[str, Any]:
     }
 
 
-@app.get("/models")
+@app.get("/models", dependencies=[Depends(require_service_key)])
 def models() -> dict[str, Any]:
     return {
         "active": [
@@ -615,7 +685,7 @@ def models() -> dict[str, Any]:
     }
 
 
-@app.get("/lab/models")
+@app.get("/lab/models", dependencies=[Depends(require_service_key)])
 def lab_models() -> dict[str, Any]:
     return {
         "models": [
@@ -675,7 +745,7 @@ def lab_models() -> dict[str, Any]:
     }
 
 
-@app.post("/lab/test")
+@app.post("/lab/test", dependencies=[Depends(require_service_key)])
 def run_lab_test(payload: LabTestRequest) -> dict[str, Any]:
     media = _decode_media(payload.media)
     is_video = payload.mimeType.lower().startswith("video/")
@@ -797,7 +867,7 @@ def run_lab_test(payload: LabTestRequest) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail="Unknown or unapproved AI Lab model")
 
 
-@app.get("/gallery")
+@app.get("/gallery", dependencies=[Depends(require_service_key)])
 def gallery() -> dict[str, Any]:
     if face_runtime is None:
         raise HTTPException(
@@ -812,7 +882,7 @@ def gallery() -> dict[str, Any]:
     }
 
 
-@app.post("/gallery/enroll")
+@app.post("/gallery/enroll", dependencies=[Depends(require_service_key)])
 def enroll_gallery(payload: GalleryEnrollment) -> dict[str, Any]:
     if face_runtime is None:
         raise HTTPException(
@@ -832,7 +902,9 @@ def enroll_gallery(payload: GalleryEnrollment) -> dict[str, Any]:
     }
 
 
-@app.delete("/gallery/{identity_id}")
+@app.delete(
+    "/gallery/{identity_id}", dependencies=[Depends(require_service_key)]
+)
 def delete_gallery_identity(identity_id: str) -> dict[str, Any]:
     if face_runtime is None:
         raise HTTPException(
@@ -849,7 +921,7 @@ def delete_gallery_identity(identity_id: str) -> dict[str, Any]:
     }
 
 
-@app.post("/face/match")
+@app.post("/face/match", dependencies=[Depends(require_service_key)])
 def match_face(payload: FaceMatchRequest) -> dict[str, Any]:
     if face_runtime is None:
         raise HTTPException(
@@ -893,6 +965,8 @@ def _camera_source(camera_id: str) -> str:
 
 @app.websocket("/ws/{video_name}")
 async def video_stream(websocket: WebSocket, video_name: str) -> None:
+    if not await _authorize_stream(websocket):
+        return
     await websocket.accept()
     video_path = _video_path(video_name)
     if video_path is None:
@@ -941,6 +1015,10 @@ async def video_stream(websocket: WebSocket, video_name: str) -> None:
 
 @app.websocket("/ws_camera/{camera_id}")
 async def camera_stream(websocket: WebSocket, camera_id: str) -> None:
+    # The token is bound to this camera id by the API, which checked ownership
+    # before signing it. Without this the endpoint streams any camera to anyone.
+    if not await _authorize_stream(websocket, camera_id):
+        return
     await websocket.accept()
     try:
         source_url = await asyncio.to_thread(_camera_source, camera_id)
@@ -992,6 +1070,8 @@ async def camera_stream(websocket: WebSocket, camera_id: str) -> None:
 
 @app.websocket("/ws_face")
 async def face_stream(websocket: WebSocket) -> None:
+    if not await _authorize_stream(websocket):
+        return
     await websocket.accept()
     if face_runtime is None:
         await websocket.send_json({"error": face_runtime_error or "Face runtime unavailable"})

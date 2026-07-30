@@ -10,6 +10,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { config } from "@/lib/config";
+import { getAiStreamToken } from "@/lib/actions/cameras";
 
 interface StreamData {
   frame?: string;
@@ -60,11 +61,29 @@ export default function VideoStream({
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectAttempt = 0;
 
-    const connect = () => {
+    const connect = async () => {
       if (!active) return;
 
       setSocketStatus("Connecting");
-      socket = new WebSocket(websocketUrl);
+
+      // Stream tokens are short lived, so a fresh one is minted per connection
+      // attempt rather than reused across reconnects.
+      const authorization = await getAiStreamToken(cameraId);
+      if (!active) return;
+      if (!authorization.success) {
+        console.warn(
+          `AI stream ${videoName} not authorised: ${authorization.message}`
+        );
+        setSocketStatus("Offline");
+        reconnectAttempt += 1;
+        const retryDelay = Math.min(1000 * 2 ** (reconnectAttempt - 1), 10000);
+        reconnectTimer = setTimeout(() => void connect(), retryDelay);
+        return;
+      }
+
+      socket = new WebSocket(
+        `${websocketUrl}?token=${encodeURIComponent(authorization.token)}`
+      );
 
       socket.onopen = () => {
         if (!active) return;
@@ -118,11 +137,11 @@ export default function VideoStream({
         setSocketStatus("Offline");
         reconnectAttempt += 1;
         const retryDelay = Math.min(1000 * 2 ** (reconnectAttempt - 1), 10000);
-        reconnectTimer = setTimeout(connect, retryDelay);
+        reconnectTimer = setTimeout(() => void connect(), retryDelay);
       };
     };
 
-    connect();
+    void connect();
 
     return () => {
       active = false;
@@ -135,7 +154,7 @@ export default function VideoStream({
         socket.close(1000, "Component unmounted");
       }
     };
-  }, [videoName, websocketUrl, title]);
+  }, [videoName, websocketUrl, title, cameraId]);
 
   const getStatusIcon = () => {
     if (socketStatus === "Connecting")

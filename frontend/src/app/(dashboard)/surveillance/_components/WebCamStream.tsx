@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { config } from "@/lib/config";
+import { getAiStreamToken } from "@/lib/actions/cameras";
 
 const WEBSOCKET_URL = config.ai.faceWebSocket;
 const FPS = config.ai.webcamFps;
@@ -114,7 +115,21 @@ export default function WebcamStream({
         return;
       }
 
-      const ws = new WebSocket(WEBSOCKET_URL);
+      const authorization = await getAiStreamToken();
+      if (requestId !== streamRequestRef.current) {
+        stopWebcam();
+        return;
+      }
+      if (!authorization.success) {
+        stopWebcam();
+        setStatus("Offline");
+        toast.error(authorization.message || "Webcam AI is not authorised");
+        return;
+      }
+
+      const ws = new WebSocket(
+        `${WEBSOCKET_URL}?token=${encodeURIComponent(authorization.token)}`
+      );
       socketRef.current = ws;
 
       ws.onopen = () => {

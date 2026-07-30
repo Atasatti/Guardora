@@ -7,6 +7,7 @@ import {
   decryptCameraSource,
   encryptCameraSource,
 } from "../utils/cameraSecrets.js";
+import { createAiStreamToken } from "../utils/aiStreamToken.js";
 
 const canManageAll = (user) =>
   user.role === "ADMIN" ||
@@ -121,10 +122,39 @@ const getCameraSource = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// Authorises a browser to open the AI service camera stream. The ownership
+// check happens here, where the Camera model and role data live; the AI service
+// only has to verify the resulting token and that it names the camera it was
+// asked to stream.
+const createCameraStreamToken = catchAsyncErrors(async (req, res, next) => {
+  const camera = await Camera.findOne({ _id: req.params.id, enabled: true });
+  if (!camera) return next(new ErrorHandler("Active camera not found", 404));
+  if (!canManageAll(req.user) && String(camera.owner) !== String(req.user._id)) {
+    return next(new ErrorHandler("Access denied", 403));
+  }
+
+  const { token, expiresInSeconds } = createAiStreamToken({
+    userId: req.user._id,
+    cameraId: camera._id,
+  });
+  res.json({ success: true, token, expiresInSeconds });
+});
+
+// Demo video playback and the operator's own webcam carry no per-object
+// authorisation, so an authenticated session is the whole requirement.
+const createGeneralStreamToken = catchAsyncErrors(async (req, res) => {
+  const { token, expiresInSeconds } = createAiStreamToken({
+    userId: req.user._id,
+  });
+  res.json({ success: true, token, expiresInSeconds });
+});
+
 export {
   listCameras,
   createCamera,
   updateCamera,
   deleteCamera,
   getCameraSource,
+  createCameraStreamToken,
+  createGeneralStreamToken,
 };

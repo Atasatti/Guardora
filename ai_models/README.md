@@ -79,6 +79,30 @@ Review each upstream model card and license before deployment. Detection and
 recognition outputs require calibrated thresholds, human review, audit logging,
 and representative local evaluation.
 
+## Service authentication
+
+Every endpoint is authenticated. The service refuses traffic that carries
+neither credential, so both variables must be set before the streams work —
+including locally.
+
+| Variable | Used by | Purpose |
+| --- | --- | --- |
+| `GUARDORA_AI_SERVICE_API_KEY` | Guardora API → service | Static shared key sent as `x-ai-service-key` on `/models`, `/lab/*`, `/gallery/*`, and `/face/match`. Must equal the API's `AI_SERVICE_API_KEY`. |
+| `GUARDORA_AI_STREAM_TOKEN_SECRET` | Browser → service | HMAC secret used to verify the short-lived stream tokens the API mints for `/ws/*`, `/ws_camera/*`, and `/ws_face`. Must equal the API's `AI_STREAM_TOKEN_SECRET`. |
+
+Browsers never hold the service key. The API authorises the request — including
+camera ownership — then signs a token scoped to that one stream, and the service
+verifies the signature, expiry, scope, and camera binding before accepting the
+WebSocket. Keep `AI_STREAM_TOKEN_SECRET` distinct from `JWT_SECRET_KEY` so that
+compromising this service cannot mint user sessions.
+
+```bash
+GUARDORA_AI_SERVICE_API_KEY="$(openssl rand -hex 32)" \
+GUARDORA_AI_STREAM_TOKEN_SECRET="$(openssl rand -hex 32)" \
+  .venv-service/bin/python -m uvicorn service.app:app \
+  --host 127.0.0.1 --port 8001
+```
+
 ## AI Model Lab evaluation mode
 
 The Guardora dashboard exposes an admin-only `/ai-lab` route for controlled

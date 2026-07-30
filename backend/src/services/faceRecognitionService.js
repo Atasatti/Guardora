@@ -27,6 +27,7 @@ const requestAi = async (pathname, options = {}) => {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        "x-ai-service-key": process.env.AI_SERVICE_API_KEY || "",
         ...options.headers,
       },
       signal: controller.signal,
