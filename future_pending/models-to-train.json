@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "snapshotDate": "2026-07-30",
+  "recommendedNextModel": "rfdetr-small-weapon-threat",
+  "currentPipelineTrainingRequired": [
+    {
+      "priority": 1,
+      "id": "rfdetr-small-weapon-threat",
+      "task": "weapon and threat object detection",
+      "action": "custom_train_and_validate",
+      "licenseTarget": "Apache-2.0",
+      "status": "dataset_required"
+    },
+    {
+      "priority": 2,
+      "id": "rfdetr-small-fire-smoke",
+      "task": "fire and smoke object detection",
+      "action": "custom_train_and_validate",
+      "licenseTarget": "Apache-2.0",
+      "status": "dataset_required"
+    },
+    {
+      "priority": 3,
+      "id": "x3d-m-violence",
+      "task": "video violence classification",
+      "action": "retrain_or_fine_tune_with_clear_checkpoint_and_dataset_rights",
+      "licenseTarget": "Apache-2.0 architecture and commercially usable data",
+      "status": "licensed_dataset_and_checkpoint_required"
+    }
+  ],
+  "futureCapabilities": [
+    {
+      "id": "rtmpose-temporal-fall-distress",
+      "status": "labelled_sequence_data_and_training_required"
+    },
+    {
+      "id": "regional-plate-detector-with-paddleocr",
+      "status": "regional_detector_training_required"
+    },
+    {
+      "id": "roman-urdu-urdu-moderation",
+      "status": "benchmark_first_optional_adapter_later"
+    }
+  ],
+  "calibrationOnly": [
+    "opencv-yunet-face-detection",
+    "opencv-sface-face-recognition"
+  ],
+  "sourceDocuments": [
+    "../ai_models/PRODUCTION_MODEL_PLAN.md",
+    "../ai_models/models.json",
+    "../SECURENEST_REQUIREMENTS_COVERAGE.md"
+  ]
+}
