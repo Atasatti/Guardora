@@ -5,31 +5,33 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { loadAnalyticsViewModel } from "@/view-models/admin";
+import { DashboardShell } from "@/app/_components/dashboard-shell";
 
 export default async function AnalyticsPage() {
   return (
-    <div className="min-h-screen bg-background p-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
+    <DashboardShell>
+      <div className="page-stack">
+      <header className="page-header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            System Analytics
-          </h1>
-          <p className="text-muted-foreground">
+          <div className="page-eyebrow">Performance intelligence</div>
+          <h1 className="page-title">System Analytics</h1>
+          <p className="page-description">
             Detailed trends and historical data analysis.
           </p>
         </div>
-      </div>
+        <Button variant="outline" asChild>
+          <Link href="/">
+            <ArrowLeft />
+            Back to overview
+          </Link>
+        </Button>
+      </header>
 
       <Suspense fallback={<PageLoader />}>
         <AnalyticsDataComponent />
       </Suspense>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
 

@@ -3,6 +3,7 @@
 import { Visitor, MaintenanceTicket, SecurityAlert } from "@/models";
 import AnalyticsCharts from "./AnalyticsCharts";
 import { TrendingUp, ShieldCheck, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Props {
   visitors: Visitor[];
@@ -23,48 +24,63 @@ export default function AnalyticsClient({ visitors, tickets, alerts }: Props) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-6 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/40 dark:to-card rounded-xl border shadow-sm flex items-center justify-between">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="metric-card py-5">
+          <CardContent className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground font-medium mb-1">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
               Total Traffic
             </p>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+            <p className="text-3xl font-semibold tracking-[-0.05em]">
               {totalVisitors}
             </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Recorded visitor entries
+            </p>
           </div>
-          <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-            <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          <div className="flex size-11 items-center justify-center rounded-xl bg-blue-500/10">
+            <TrendingUp className="size-5 text-blue-600 dark:text-blue-400" />
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="p-6 bg-gradient-to-br from-green-50 to-white dark:from-green-950/40 dark:to-card rounded-xl border shadow-sm flex items-center justify-between">
+        <Card className="metric-card py-5">
+          <CardContent className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground font-medium mb-1">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
               Ticket Resolution
             </p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-3xl font-semibold tracking-[-0.05em]">
               {completionRate}%
             </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Maintenance completion rate
+            </p>
           </div>
-          <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-            <Clock className="h-6 w-6 text-green-600 dark:text-green-400" />
+          <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10">
+            <Clock className="size-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="p-6 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/40 dark:to-card rounded-xl border shadow-sm flex items-center justify-between">
+        <Card className="metric-card py-5">
+          <CardContent className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground font-medium mb-1">
+            <p className="mb-1 text-xs font-medium text-muted-foreground">
               Security Level
             </p>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+            <p className="text-2xl font-semibold tracking-[-0.04em]">
               {totalAlerts > 10 ? "High Alert" : "Nominal"}
             </p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Based on {totalAlerts} recorded alerts
+            </p>
           </div>
-          <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
-            <ShieldCheck className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          <div className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10">
+            <ShieldCheck className="size-5 text-violet-600 dark:text-violet-400" />
           </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <AnalyticsCharts visitors={visitors} tickets={tickets} alerts={alerts} />

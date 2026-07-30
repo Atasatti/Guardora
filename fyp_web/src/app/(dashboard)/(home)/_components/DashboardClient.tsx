@@ -1,33 +1,40 @@
 "use client";
 
+import Link from "next/link";
+import { format, formatDistanceToNow } from "date-fns";
 import {
-  Users,
-  ClipboardList,
-  Wrench,
-  ShieldAlert,
-  Activity,
-  Map as MapIcon,
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  Map as MapIcon,
+  Megaphone,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  UserPlus,
+  Users,
+  Wrench,
+  type LucideIcon,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import {
-  SocietyArea,
   MaintenanceTicket,
   ModerationCase,
   SecurityAlert,
+  SocietyArea,
   Visitor,
 } from "@/models";
-import { format } from "date-fns";
 
 interface DashboardData {
   userCount: number;
@@ -53,374 +60,454 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     alerts,
   } = data;
 
-  const unsafeAreas = areas.filter((a) => !a.isSafe);
+  const unsafeAreas = areas.filter((area) => !area.isSafe);
+  const safeAreaPercent =
+    areas.length === 0
+      ? 100
+      : Math.round(((areas.length - unsafeAreas.length) / areas.length) * 100);
+  const newAlerts = alerts.filter((alert) => alert.status === "NEW");
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full">
-      {/* --- HEADER --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <header className="page-header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Overview of society operations and security status.
+          <div className="page-eyebrow">
+            <ShieldCheck className="size-3.5" />
+            Command center
+          </div>
+          <h1 className="page-title">Good morning, Administrator</h1>
+          <p className="page-description">
+            Here is the live operational picture across your community today.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md hidden md:block">
-            {format(new Date(), "EEEE, MMMM do, yyyy")}
-          </span>
-          {/* --- LINK TO ANALYTICS --- */}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="hidden rounded-xl border border-border/75 bg-card px-3.5 py-2.5 text-xs text-muted-foreground shadow-xs md:block">
+            <Clock3 className="mr-2 inline size-3.5 text-primary" />
+            {format(new Date(), "EEEE, MMMM d")}
+          </div>
           <Button asChild>
             <Link href="/analytics">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              View Analytics
+              <BarChart3 />
+              Open analytics
             </Link>
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* --- TOP ROW: KPI CARDS --- */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Key operational metrics" className="metric-grid">
         <KpiCard
-          title="Total Residents"
+          title="Residents"
           value={userCount}
+          detail="Registered community members"
           icon={Users}
-          description="Registered users"
           href="/users"
+          tone="teal"
         />
         <KpiCard
-          title="Active Visitors"
+          title="Visitors on site"
           value={activeVisitors}
+          detail={activeVisitors > 0 ? "Live access records" : "No active passes"}
           icon={ClipboardList}
-          description="Currently on premises"
           href="/visitors"
-          trend={activeVisitors > 0 ? "Live" : undefined}
+          tone="blue"
+          status={activeVisitors > 0 ? "Live" : undefined}
         />
         <KpiCard
-          title="Open Maintenance"
+          title="Open maintenance"
           value={pendingMaintenance}
+          detail="Requests needing action"
           icon={Wrench}
-          description="Requests pending"
           href="/maintenance"
-          alert={pendingMaintenance > 5}
+          tone="amber"
+          attention={pendingMaintenance > 5}
         />
         <KpiCard
-          title="Content Flags"
+          title="Moderation queue"
           value={openModeration}
-          icon={ShieldAlert}
-          description="AI moderation queue"
+          detail="AI-flagged items to review"
+          icon={Sparkles}
           href="/moderation"
-          alert={openModeration > 0}
+          tone="violet"
+          attention={openModeration > 0}
         />
-      </div>
+      </section>
 
-      {/* --- MIDDLE ROW: SECURITY & MAP STATUS --- */}
-      <div className="grid gap-4 md:grid-cols-7">
-        {/* Security Health (4 cols) */}
-        <Card className="col-span-4 bg-gradient-to-br from-card to-muted/20">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border/70 pb-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="size-4" />
+                  </span>
+                  Security posture
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Live sector coverage and incident activity
+                </CardDescription>
+              </div>
+              <Badge
+                className={
+                  unsafeAreas.length === 0
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                }
+              >
+                <span
+                  className={`size-1.5 rounded-full ${
+                    unsafeAreas.length === 0 ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
+                />
+                {unsafeAreas.length === 0
+                  ? "All sectors secure"
+                  : `${unsafeAreas.length} sector${
+                      unsafeAreas.length === 1 ? "" : "s"
+                    } need attention`}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+              <div className="rounded-2xl border border-border/70 bg-muted/35 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Area health
+                    </p>
+                    <p className="mt-1 text-3xl font-semibold tracking-[-0.05em]">
+                      {safeAreaPercent}%
+                    </p>
+                  </div>
+                  <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <MapIcon className="size-5" />
+                  </span>
+                </div>
+                <div className="mt-5 h-2 overflow-hidden rounded-full bg-border/80">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-[width]"
+                    style={{ width: `${safeAreaPercent}%` }}
+                  />
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{areas.length - unsafeAreas.length} secure sectors</span>
+                  <span>{unsafeAreas.length} flagged</span>
+                </div>
+                <Button variant="outline" className="mt-5 w-full" asChild>
+                  <Link href="/map">
+                    View safety map
+                    <ArrowUpRight />
+                  </Link>
+                </Button>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="section-heading">Recent security activity</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {newAlerts.length} unreviewed{" "}
+                      {newAlerts.length === 1 ? "event" : "events"}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/alerts">
+                      View all
+                      <ArrowRight />
+                    </Link>
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {alerts.length === 0 ? (
+                    <EmptyState
+                      icon={CheckCircle2}
+                      title="No active alerts"
+                      description="The monitoring queue is clear."
+                    />
+                  ) : (
+                    alerts.slice(0, 4).map((alert) => (
+                      <Link
+                        href="/alerts"
+                        key={alert._id}
+                        className="flex items-center gap-3 rounded-xl border border-border/65 px-3.5 py-3 transition-colors hover:bg-accent/45"
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                          <ShieldAlert className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {alert.type.replaceAll("_", " ")}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {alert.cameraName || "Unassigned camera"}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-[0.68rem] text-muted-foreground">
+                          {formatDistanceToNow(new Date(alert.timestamp), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-blue-500" /> Security Pulse
-            </CardTitle>
+            <CardTitle>Quick actions</CardTitle>
             <CardDescription>
-              Real-time system health and map status
+              Start common operational workflows
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg border bg-background/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Map Sectors
-                  </span>
-                  <MapIcon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                {unsafeAreas.length === 0 ? (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="font-bold">All Sectors Secure</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-destructive">
-                    <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                    <span className="font-bold">
-                      {unsafeAreas.length} Hazard Zones
-                    </span>
-                  </div>
-                )}
-                <Link
-                  href="/safety-map"
-                  className="text-xs text-blue-500 hover:underline mt-1 block"
-                >
-                  View Safety Map &rarr;
-                </Link>
-              </div>
-
-              <div className="p-4 rounded-lg border bg-background/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Active Alerts
-                  </span>
-                  <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="text-2xl font-bold">{alerts.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Unreviewed incidents
-                </p>
-                <Link
-                  href="/alerts"
-                  className="text-xs text-blue-500 hover:underline mt-1 block"
-                >
-                  Open Logs &rarr;
-                </Link>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Recent Activity</h4>
-              <div className="space-y-2">
-                {alerts.length === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-md">
-                    No active security alerts.
-                  </div>
-                ) : (
-                  alerts.slice(0, 3).map((alert) => (
-                    <div
-                      key={alert._id}
-                      className="flex items-center justify-between text-sm p-2 rounded bg-background border"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="destructive"
-                          className="text-[10px] h-5"
-                        >
-                          {alert.type}
-                        </Badge>
-                        <span className="text-muted-foreground truncate max-w-[150px]">
-                          {alert.cameraName}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(alert.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+          <CardContent className="space-y-2.5">
+            <QuickAction
+              href="/announcements"
+              icon={Megaphone}
+              title="Publish announcement"
+              detail="Notify the resident community"
+            />
+            <QuickAction
+              href="/visitors"
+              icon={ClipboardList}
+              title="Issue visitor pass"
+              detail="Create a secure access record"
+            />
+            <QuickAction
+              href="/users"
+              icon={UserPlus}
+              title="Register resident"
+              detail="Add a community member"
+            />
+            <QuickAction
+              href="/maintenance"
+              icon={Wrench}
+              title="Review maintenance"
+              detail="Prioritize outstanding work"
+            />
           </CardContent>
         </Card>
+      </section>
 
-        {/* Quick Actions (3 cols) */}
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-            <Button
-              variant="outline"
-              className="justify-start h-auto py-3"
-              asChild
-            >
-              <Link href="/announcements">
-                <div className="flex flex-col items-start gap-1">
-                  <span className="font-semibold">Post Announcement</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    Broadcast update to residents
-                  </span>
-                </div>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start h-auto py-3"
-              asChild
-            >
-              <Link href="/visitors">
-                <div className="flex flex-col items-start gap-1">
-                  <span className="font-semibold">Issue Visitor Pass</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    Create entry code for guest
-                  </span>
-                </div>
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="justify-start h-auto py-3"
-              asChild
-            >
-              <Link href="/users">
-                <div className="flex flex-col items-start gap-1">
-                  <span className="font-semibold">Register Resident</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    Onboard new unit owner
-                  </span>
-                </div>
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* --- BOTTOM ROW: TASK LISTS --- */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Maintenance Queue */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Maintenance Requests</CardTitle>
-              <CardDescription>
-                Recent tickets requiring attention
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/maintenance">
-                View All <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {maintenanceTickets.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No pending maintenance tickets.
-                </p>
-              ) : (
-                maintenanceTickets.slice(0, 4).map((ticket) => (
-                  <div
-                    key={ticket._id}
-                    className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{ticket.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        By {ticket.requester.name} •{" "}
-                        {ticket.requester.unitNumber}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        ticket.status === "IN_PROGRESS"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {ticket.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Moderation Queue */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Moderation Queue</CardTitle>
-              <CardDescription>Flagged content awaiting review</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/moderation">
-                Review All <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {moderationCases.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
-                  <ShieldAlert className="h-8 w-8 mb-2 opacity-20" />
-                  <p className="text-sm">Queue is empty. Good job!</p>
-                </div>
-              ) : (
-                moderationCases.slice(0, 4).map((modCase) => (
-                  <div
-                    key={modCase._id}
-                    className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] h-5">
-                          {modCase.targetModel}
-                        </Badge>
-                        <p className="text-sm font-medium text-destructive">
-                          {modCase.reason}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[250px]">
-                        &quot;{modCase.flaggedContentSnippet}&quot;
-                      </p>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href="/moderation">Review</Link>
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="grid gap-5 xl:grid-cols-2">
+        <QueueCard
+          title="Maintenance workload"
+          description="Latest requests requiring operational follow-up"
+          href="/maintenance"
+          emptyTitle="Maintenance queue is clear"
+          emptyDescription="There are no outstanding service requests."
+          items={maintenanceTickets.slice(0, 4).map((ticket) => ({
+            id: ticket._id,
+            title: ticket.title,
+            meta: `${ticket.requester.name} · ${
+              ticket.requester.unitNumber || "Unit not set"
+            }`,
+            badge: ticket.status.replaceAll("_", " "),
+            tone:
+              ticket.status === "IN_PROGRESS"
+                ? "text-blue-700 bg-blue-500/10 dark:text-blue-300"
+                : "text-amber-700 bg-amber-500/10 dark:text-amber-300",
+          }))}
+        />
+        <QueueCard
+          title="AI review queue"
+          description="Flagged content awaiting an administrator decision"
+          href="/moderation"
+          emptyTitle="Review queue is clear"
+          emptyDescription="No content requires moderation right now."
+          items={moderationCases.slice(0, 4).map((item) => ({
+            id: item._id,
+            title: item.reason,
+            meta: item.flaggedContentSnippet
+              ? `“${item.flaggedContentSnippet}”`
+              : item.targetModel,
+            badge: item.aiConfidence || item.status,
+            tone: "text-violet-700 bg-violet-500/10 dark:text-violet-300",
+          }))}
+        />
+      </section>
     </div>
   );
 }
 
-// --- Helper Component: KPI Card ---
+const toneStyles = {
+  teal: "bg-primary/10 text-primary",
+  blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  violet: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+};
+
 function KpiCard({
   title,
   value,
+  detail,
   icon: Icon,
-  description,
   href,
-  alert,
-  trend,
+  tone,
+  status,
+  attention,
 }: {
   title: string;
   value: number;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  description: string;
+  detail: string;
+  icon: LucideIcon;
   href: string;
-  alert?: boolean;
-  trend?: string;
+  tone: keyof typeof toneStyles;
+  status?: string;
+  attention?: boolean;
 }) {
   return (
-    <Link href={href}>
-      <Card
-        className={`hover:bg-accent/50 transition-colors cursor-pointer ${
-          alert ? "border-destructive/50 bg-destructive/5" : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          <Icon
-            className={`h-4 w-4 ${
-              alert ? "text-destructive" : "text-muted-foreground"
-            }`}
-          />
-        </CardHeader>
+    <Link href={href} className="group">
+      <Card className="metric-card h-full py-5 group-hover:border-primary/25 group-hover:shadow-[0_14px_40px_rgb(15_23_42_/_7%)]">
         <CardContent>
-          <div className="text-2xl font-bold flex items-center gap-2">
-            {value}
-            {trend && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-green-100 text-green-700 hover:bg-green-100"
-              >
-                {trend}
-              </Badge>
-            )}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">{title}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <p className="text-[1.8rem] font-semibold leading-none tracking-[-0.05em]">
+                  {value}
+                </p>
+                {status && (
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    {status}
+                  </Badge>
+                )}
+                {attention && (
+                  <span className="size-2 rounded-full bg-amber-500 ring-4 ring-amber-500/10" />
+                )}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
+            </div>
+            <span
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${toneStyles[tone]}`}
+            >
+              <Icon className="size-[1.1rem]" strokeWidth={1.9} />
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">{description}</p>
         </CardContent>
       </Card>
     </Link>
+  );
+}
+
+function QuickAction({
+  href,
+  icon: Icon,
+  title,
+  detail,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3 rounded-xl border border-border/65 p-3 transition-colors hover:border-primary/20 hover:bg-accent/45"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {detail}
+        </span>
+      </span>
+      <ArrowUpRight className="size-4 text-muted-foreground/55 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+    </Link>
+  );
+}
+
+function QueueCard({
+  title,
+  description,
+  href,
+  items,
+  emptyTitle,
+  emptyDescription,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  items: {
+    id: string;
+    title: string;
+    meta: string;
+    badge: string;
+    tone: string;
+  }[];
+  emptyTitle: string;
+  emptyDescription: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription className="mt-1">{description}</CardDescription>
+        </div>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={href}>
+            View all
+            <ArrowRight />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title={emptyTitle}
+            description={emptyDescription}
+          />
+        ) : (
+          <div className="divide-y divide-border/70">
+            {items.map((item) => (
+              <Link
+                href={href}
+                key={item.id}
+                className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">
+                    {item.title}
+                  </span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
+                    {item.meta}
+                  </span>
+                </span>
+                <Badge className={item.tone}>{item.badge}</Badge>
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/25 px-4 text-center">
+      <span className="flex size-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+        <Icon className="size-4" />
+      </span>
+      <p className="mt-3 text-sm font-medium">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    </div>
   );
 }

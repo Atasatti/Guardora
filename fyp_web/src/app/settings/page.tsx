@@ -6,29 +6,33 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { loadSettingsViewModel } from "@/view-models/admin";
 import ViewModelError from "@/views/shared/ViewModelError";
+import { DashboardShell } from "@/app/_components/dashboard-shell";
 
 export default async function SettingsPage() {
   return (
-    <div className="min-h-screen bg-background p-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4 mb-8 max-w-4xl mx-auto">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
+    <DashboardShell>
+      <div className="page-stack mx-auto max-w-5xl">
+      <header className="page-header">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
+          <div className="page-eyebrow">Workspace preferences</div>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-description">
             Manage your account and preferences.
           </p>
         </div>
-      </div>
+        <Button variant="outline" asChild>
+          <Link href="/">
+            <ArrowLeft />
+            Back to overview
+          </Link>
+        </Button>
+      </header>
 
       <Suspense fallback={<PageLoader />}>
         <SettingsDataComponent />
       </Suspense>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
 

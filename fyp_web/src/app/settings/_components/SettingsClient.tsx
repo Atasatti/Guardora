@@ -105,7 +105,7 @@ export default function SettingsClient({ user }: Props) {
   const handleLogout = async () => await logout();
 
   return (
-    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="general" className="flex items-center gap-2">
@@ -222,14 +222,16 @@ export default function SettingsClient({ user }: Props) {
               <CardDescription>Customize the look and feel.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {["light", "dark", "system"].map((mode) => (
-                  <div
+                  <button
+                    type="button"
                     key={mode}
-                    className={`cursor-pointer border-2 rounded-lg p-4 flex flex-col items-center gap-2 hover:bg-muted/50 transition-colors ${
+                    aria-pressed={theme === mode}
+                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border p-5 transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 ${
                       theme === mode
-                        ? "border-primary bg-muted/30"
-                        : "border-muted"
+                        ? "border-primary/55 bg-primary/5"
+                        : "border-border"
                     }`}
                     onClick={() => setTheme(mode)}
                   >
@@ -245,7 +247,7 @@ export default function SettingsClient({ user }: Props) {
                     <span className="font-medium text-sm capitalize">
                       {mode} Mode
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </CardContent>
