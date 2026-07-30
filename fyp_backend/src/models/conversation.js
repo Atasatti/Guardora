@@ -8,6 +8,35 @@ const conversationSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    type: {
+      type: String,
+      enum: ["DIRECT", "GROUP"],
+      default: "DIRECT",
+    },
+    name: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: null,
+    },
+    admins: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    directKey: {
+      type: String,
+      default: null,
+      unique: true,
+      sparse: true,
+    },
+    deletedFor: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
@@ -15,5 +44,7 @@ const conversationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+conversationSchema.index({ participants: 1, updatedAt: -1 });
 
 export default mongoose.model("Conversation", conversationSchema);
