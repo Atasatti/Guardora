@@ -82,3 +82,30 @@ export async function deleteMaintenanceTicket(ticketId: string) {
     };
   }
 }
+
+export async function assignMaintenanceTicket(
+  ticketId: string,
+  assignedTo: string,
+  expectedResolutionAt?: string
+) {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/maintenance_tickets/${ticketId}/assign`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ assignedTo, expectedResolutionAt }),
+      }
+    );
+    const result = await handleApiResponse<MaintenanceTicket>(response);
+    if (result.success) {
+      revalidatePath("/maintenance");
+      return { success: true as const, ticket: result.data };
+    }
+    return result;
+  } catch (error) {
+    return {
+      success: false as const,
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

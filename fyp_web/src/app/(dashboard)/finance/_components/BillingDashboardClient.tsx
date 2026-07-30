@@ -16,6 +16,7 @@ import {
   DollarSign,
   CheckCircle,
   AlertTriangle,
+  Download,
 } from "lucide-react";
 import BillingDataTable from "./BillingDataTable";
 import { useBillingColumns } from "./BillingTableColumns";
@@ -121,16 +122,22 @@ export default function BillingDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Billing & Finance</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Billing & Finance</h1>
+            <p className="page-description">
               Manage resident bills and track payments
             </p>
           </div>
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <a href="/api/resident/bills/admin/export.csv">
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </a>
+            </Button>
             <Button variant="outline" onClick={() => setIsBulkModalOpen(true)}>
               <Users className="mr-2 h-4 w-4" />
               Bulk Create

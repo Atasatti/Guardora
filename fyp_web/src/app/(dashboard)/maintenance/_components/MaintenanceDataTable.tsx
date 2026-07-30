@@ -27,11 +27,17 @@ import { Input } from "@/components/ui/input";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  filterColumnId?: string;
+  filterPlaceholder?: string;
+  emptyMessage?: string;
 }
 
 export default function MaintenanceDataTable<TData, TValue>({
   columns,
   data,
+  filterColumnId = "title",
+  filterPlaceholder = "Filter by ticket title...",
+  emptyMessage = "No tickets found.",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -50,21 +56,25 @@ export default function MaintenanceDataTable<TData, TValue>({
       columnFilters,
     },
   });
+  const filterColumn = table
+    .getAllLeafColumns()
+    .find((column) => column.id === filterColumnId);
 
   return (
     <div className="space-y-4">
       {/* --- Filter Input --- */}
-      <div className="flex items-center">
-        <Input
-          placeholder="Filter by ticket title..."
-          // This filter is tied to the "title" column
-          value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-      </div>
+      {filterColumn && (
+        <div className="flex items-center">
+          <Input
+            placeholder={filterPlaceholder}
+            value={(filterColumn.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              filterColumn.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+        </div>
+      )}
 
       {/* --- Table --- */}
       <div className="rounded-md border">
@@ -110,7 +120,7 @@ export default function MaintenanceDataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No tickets found.
+                  {emptyMessage}
                 </TableCell>
               </TableRow>
             )}

@@ -10,10 +10,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  ShieldAlert,
+} from "lucide-react";
 import ReportsDataTable from "./ReportsDataTable";
 import { columns } from "./ReportsTableColumns";
 import ViewReportModal from "./ViewReportModal";
+import { Button } from "@/components/ui/button";
 
 export default function ReportsDashboardClient({
   initialReports,
@@ -47,13 +53,21 @@ export default function ReportsDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header>
-          <h1 className="text-3xl font-bold">Community Reports</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and resolve complaints, content flags, and safety issues.
-          </p>
+        <header className="page-header">
+          <div>
+            <h1 className="page-title">Community Reports</h1>
+            <p className="page-description">
+              Review and resolve complaints, content flags, and safety issues.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <a href="/api/resident/reports/admin/export.csv">
+              <Download className="mr-2 size-4" />
+              Export CSV
+            </a>
+          </Button>
         </header>
 
         {/* --- Stats Overview --- */}

@@ -87,9 +87,14 @@ export default function UserClient({
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <header className="flex items-center justify-between pb-4">
-        <h1 className="text-3xl font-bold">User Management</h1>
+    <div className="page-stack">
+      <header className="page-header">
+        <div>
+        <h1 className="page-title">Resident Management</h1>
+        <p className="page-description">
+          Manage resident profiles, access, roles, and reported accounts.
+        </p>
+        </div>
       </header>
 
       <Tabs defaultValue="all-users" className="flex-grow flex flex-col">

@@ -32,8 +32,15 @@ import {
 import {
   updateMaintenanceTicket,
   deleteMaintenanceTicket,
+  assignMaintenanceTicket,
 } from "@/lib/actions";
-import { MaintenanceTicket, TICKET_STATUSES, TicketStatus } from "@/models";
+import {
+  MaintenanceTicket,
+  TICKET_STATUSES,
+  TicketStatus,
+  User,
+} from "@/models";
+import { getAllUsers } from "@/lib/actions/users";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -55,12 +62,26 @@ export default function ViewTicketModal({
     undefined
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [staff, setStaff] = useState<User[]>([]);
+  const [assignee, setAssignee] = useState("");
 
   // When the modal opens (i.e., 'ticket' prop changes),
   // set the internal state to match the selected ticket.
   useEffect(() => {
     if (ticket) {
       setCurrentStatus(ticket.status);
+      setAssignee(ticket.assignedTo?._id || "");
+      getAllUsers().then((result) => {
+        if (result.success) {
+          setStaff(
+            (result.users || []).filter(
+              (user) =>
+                user.accountStatus === "ACTIVE" &&
+                ["ADMIN", "MODERATOR"].includes(user.role)
+            )
+          );
+        }
+      });
     }
   }, [ticket]);
 
@@ -69,15 +90,45 @@ export default function ViewTicketModal({
   }
 
   const handleUpdateStatus = async () => {
-    if (currentStatus === ticket.status) {
+    if (
+      currentStatus === ticket.status &&
+      assignee === (ticket.assignedTo?._id || "")
+    ) {
       // No change, just close the modal
       handleClose();
       return;
     }
     setIsLoading(true);
 
+    const operation = async () => {
+      let result:
+        | Awaited<ReturnType<typeof assignMaintenanceTicket>>
+        | Awaited<ReturnType<typeof updateMaintenanceTicket>>;
+      const assignmentChanged =
+        assignee && assignee !== (ticket.assignedTo?._id || "");
+      if (assignmentChanged) {
+        result = await assignMaintenanceTicket(ticket._id, assignee);
+        if (!result.success) return result;
+      } else {
+        result = {
+          success: true,
+          ticket,
+        };
+      }
+
+      const currentServerStatus = assignmentChanged
+        ? "ASSIGNED"
+        : ticket.status;
+      if (currentStatus && currentStatus !== currentServerStatus) {
+        return updateMaintenanceTicket(ticket._id, {
+          status: currentStatus,
+        });
+      }
+      return result;
+    };
+
     toast.promise(
-      updateMaintenanceTicket(ticket._id, { status: currentStatus }),
+      operation(),
       {
         loading: "Updating status...",
         success: (res) => {
@@ -158,6 +209,28 @@ export default function ViewTicketModal({
             >
               {ticket.description}
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="assignee" className="font-semibold">
+              Assigned staff
+            </Label>
+            <Select
+              value={assignee}
+              onValueChange={setAssignee}
+              disabled={isLoading}
+            >
+              <SelectTrigger id="assignee">
+                <SelectValue placeholder="Assign a staff member" />
+              </SelectTrigger>
+              <SelectContent>
+                {staff.map((user) => (
+                  <SelectItem key={user._id} value={user._id}>
+                    {user.name} · {user.role.toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* --- Change Status --- */}

@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { API_BASE_URL } from "../api-client";
-import { User, UserProfileResponse } from "@/models";
+import {
+  AccountStatus,
+  ModeratorPermission,
+  User,
+  UserProfileResponse,
+  UserRole,
+} from "@/models";
 import { fetchWithAuth, handleApiResponse } from "../server-utils";
 import { cookies } from "next/headers";
 
@@ -66,6 +72,9 @@ export async function adminUpdateUser(
     email: string;
     phoneNumber: string;
     unitNumber: string;
+    role?: UserRole;
+    accountStatus?: AccountStatus;
+    permissions?: ModeratorPermission[];
   }
 ) {
   try {
@@ -106,7 +115,7 @@ export async function adminDeleteUser(userId: string) {
 
     if (result.success) {
       revalidatePath("/users");
-      return { success: true, message: "User deleted successfully" };
+      return { success: true, message: "User deactivated successfully" };
     }
     return result;
   } catch (error) {

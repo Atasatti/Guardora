@@ -32,13 +32,13 @@ export default function ModerationDashboardClient({ initialCases }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full w-full gap-6">
+    <div className="page-stack">
       <header>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <ShieldAlert className="h-8 w-8 text-destructive" />
+        <h1 className="page-title flex items-center gap-2">
+          <ShieldAlert className="size-6 text-destructive" />
           AI Moderation Queue
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="page-description">
           Review content flagged by AI as potentially unsafe.
         </p>
       </header>

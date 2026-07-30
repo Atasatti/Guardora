@@ -69,6 +69,8 @@ export const columns = (callbacks: {
 
   {
     id: "targetItem",
+    accessorFn: (ad) =>
+      (ad.targetItem as Product | Service | null)?.title || "Deleted item",
     header: "Ad Content",
     cell: ({ row }) => {
       const ad = row.original;

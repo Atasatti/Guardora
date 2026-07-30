@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Users, Clock, DollarSign } from "lucide-react";
+import { Plus, Users, Clock, DollarSign, Download } from "lucide-react";
 import FacilitiesDataTable from "./FacilitiesDataTable";
 import { columns } from "./FacilitiesTableColumns";
 import CreateFacilityModal from "./CreateFacilityModal";
@@ -53,19 +53,27 @@ export default function FacilitiesDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Facilities Management</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Facilities Management</h1>
+            <p className="page-description">
               Manage residential society facilities and their availability
             </p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Facility
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <a href="/api/resident/reservations/admin/export.csv">
+                <Download className="mr-2 h-4 w-4" />
+                Booking report
+              </a>
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Facility
+            </Button>
+          </div>
         </header>
 
         {/* --- Stat Cards --- */}

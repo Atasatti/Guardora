@@ -15,6 +15,7 @@ import {
   ClipboardList,
   CheckCircle,
   LayoutGrid,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import MaintenanceDataTable from "./MaintenanceDataTable";
@@ -50,16 +51,22 @@ export default function MaintenanceDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Maintenance Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Maintenance Dashboard</h1>
+            <p className="page-description">
               Manage and track all maintenance requests
             </p>
           </div>
           <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <a href="/api/resident/maintenance_tickets/admin/export.csv">
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </a>
+            </Button>
             <Link href="/maintenance/board">
               <Button variant="outline">
                 <LayoutGrid className="mr-2 h-4 w-4" />

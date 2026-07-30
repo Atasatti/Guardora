@@ -9,11 +9,19 @@ import KanbanColumn from "./KanbanColumn";
 import ViewTicketModal from "./ViewTicketModal";
 
 // Define the order and titles for our columns
-const COLUMN_IDS: TicketStatus[] = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+const COLUMN_IDS: TicketStatus[] = [
+  "PENDING",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+];
 const COLUMN_NAMES: Record<TicketStatus, string> = {
   PENDING: "Pending",
+  ASSIGNED: "Assigned",
   IN_PROGRESS: "In Progress",
   COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 export default function MaintenanceKanbanClient({
@@ -98,12 +106,12 @@ export default function MaintenanceKanbanClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Maintenance Kanban Board</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Maintenance Kanban Board</h1>
+            <p className="page-description">
               Drag and drop tickets to update their status
             </p>
           </div>
@@ -111,7 +119,7 @@ export default function MaintenanceKanbanClient({
 
         {/* --- Kanban Board --- */}
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
             {COLUMN_IDS.map((status) => (
               <KanbanColumn
                 key={status}

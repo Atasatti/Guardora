@@ -36,13 +36,15 @@ export default function AdsDashboardClient({
   };
 
   return (
-    <div className="flex flex-col gap-6 h-full w-full">
-      <div>
-        <h1 className="text-3xl font-bold">Ad Campaigns</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="page-stack">
+      <header className="page-header">
+        <div>
+        <h1 className="page-title">Ad Campaigns</h1>
+        <p className="page-description">
           Manage promotional content from residents.
         </p>
-      </div>
+        </div>
+      </header>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
@@ -89,6 +91,9 @@ export default function AdsDashboardClient({
               onReject: (id) => handleStatusChange(id, "REJECTED"),
             })}
             data={ads}
+            filterColumnId="targetItem"
+            filterPlaceholder="Filter by ad title..."
+            emptyMessage="No ad campaigns found."
           />
         </CardContent>
       </Card>

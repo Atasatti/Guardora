@@ -49,9 +49,10 @@ export default function DeleteUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete{" "}
+            This revokes login access while preserving security, billing, and
+            audit records for{" "}
             <span className="font-semibold">{user.name}</span>&apos;s account
-            and remove their data from our servers.
+            . An administrator can reactivate it later.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

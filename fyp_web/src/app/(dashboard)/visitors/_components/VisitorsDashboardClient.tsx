@@ -46,11 +46,11 @@ export default function VisitorsDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="page-stack">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Visitor Management</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Visitor Management</h1>
+            <p className="page-description">
               Manage entry passes for guests, deliveries, and services.
             </p>
           </div>

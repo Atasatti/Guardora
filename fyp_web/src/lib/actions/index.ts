@@ -15,6 +15,7 @@ export {
   getMaintenanceTickets,
   updateMaintenanceTicket,
   deleteMaintenanceTicket,
+  assignMaintenanceTicket,
 } from "./maintenance";
 
 // Facilities
