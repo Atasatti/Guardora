@@ -6,6 +6,7 @@ import ChatWindow from "@/app/(dashboard)/messages/_components/ChatWindow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { STORAGE_BASE_URL } from "@/lib/api-client";
 import { loadUserProfileViewModel } from "@/view-models/admin";
+import { DashboardShell } from "@/app/_components/dashboard-shell";
 
 export default async function ChatPage({
   params,
@@ -15,9 +16,10 @@ export default async function ChatPage({
   const { id } = await params;
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <DashboardShell contentClassName="max-w-none p-0">
+    <div className="flex h-[calc(100vh-72px)] flex-col bg-card">
       {/* Header Area */}
-      <div className="border-b p-4 flex items-center gap-4 bg-card shadow-sm z-10">
+      <div className="z-10 flex items-center gap-4 border-b border-border/70 bg-card px-4 py-3.5 sm:px-6">
         <Button variant="ghost" size="icon" asChild className="shrink-0">
           <Link href="/messages">
             <ArrowLeft className="h-5 w-5" />
@@ -34,10 +36,11 @@ export default async function ChatPage({
       </div>
 
       {/* Chat Content */}
-      <div className="flex-1 overflow-hidden bg-muted/10">
+      <div className="flex-1 overflow-hidden bg-muted/25">
         <ChatWindow otherUserId={id} />
       </div>
     </div>
+    </DashboardShell>
   );
 }
 

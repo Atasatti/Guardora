@@ -8,12 +8,12 @@ import ViewModelError from "@/views/shared/ViewModelError";
 
 export default async function MessagesPage() {
   return (
-    <div className="flex flex-col h-full w-full gap-6 p-6">
+    <div className="page-stack">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">Messages</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="page-title">Messages</h1>
+          <p className="page-description">
             View your conversations and reach out to residents.
           </p>
         </div>

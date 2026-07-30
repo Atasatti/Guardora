@@ -12,19 +12,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Edit, Trash2, Pin } from "lucide-react";
 import { format } from "date-fns";
 
 export const columns = (callbacks: {
   onEdit: (item: Announcement) => void;
   onDelete: (item: Announcement) => void;
+  onPin: (item: Announcement) => void;
 }): ColumnDef<Announcement>[] => [
   // 1. Title
   {
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => (
-      <div className="font-medium min-w-[150px]">{row.original.title}</div>
+      <div className="flex min-w-[150px] items-center gap-2 font-medium">
+        {row.original.isPinned && <Pin className="size-3.5 text-primary" />}
+        {row.original.title}
+      </div>
     ),
   },
 
@@ -58,7 +62,9 @@ export const columns = (callbacks: {
     },
     cell: ({ row }) => {
       const isUrgent = row.original.isUrgent;
-      return isUrgent ? (
+      return row.original.kind === "POLL" ? (
+        <Badge variant="outline">Poll</Badge>
+      ) : isUrgent ? (
         <Badge variant="destructive">Urgent</Badge>
       ) : (
         <Badge variant="secondary">Normal</Badge>
@@ -103,6 +109,10 @@ export const columns = (callbacks: {
             <DropdownMenuItem onClick={() => callbacks.onEdit(item)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => callbacks.onPin(item)}>
+              <Pin className="mr-2 h-4 w-4" />
+              {item.isPinned ? "Unpin" : "Pin to top"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

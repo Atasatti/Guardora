@@ -58,3 +58,19 @@ export async function sendRestMessage(receiverId: string, text: string) {
     return { success: false, message: "Failed to send" };
   }
 }
+
+export async function deleteConversation(conversationId: string) {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/chat/conversations/${conversationId}`,
+      { method: "DELETE" }
+    );
+    return await handleApiResponse<{ message: string }>(response);
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to delete conversation",
+    };
+  }
+}

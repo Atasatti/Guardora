@@ -34,6 +34,9 @@ export default function CreateAnnouncementModal({
     title: "",
     description: "",
     isUrgent: false,
+    kind: "ANNOUNCEMENT" as "ANNOUNCEMENT" | "POLL",
+    commentsEnabled: true,
+    pollOptionsText: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,21 +52,32 @@ export default function CreateAnnouncementModal({
       // *Recommendation*: Adjust `createAnnouncement` in backend to return the object data
       // inside `result.data`.
 
-      const res = await createAnnouncement(formData);
+      const res = await createAnnouncement({
+        title: formData.title,
+        description: formData.description,
+        isUrgent: formData.isUrgent,
+        kind: formData.kind,
+        commentsEnabled: formData.commentsEnabled,
+        pollOptions:
+          formData.kind === "POLL"
+            ? formData.pollOptionsText
+                .split("\n")
+                .map((text) => ({ text: text.trim() }))
+                .filter((option) => option.text)
+            : [],
+      });
 
-      if (res.success) {
-        // Since we didn't return the object from the action wrapper in the previous step,
-        // we will do a quick page reload OR you can update your action to return 'data'.
-        // For now, let's close and let revalidatePath handle it,
-        // or construct a temporary object for optimistic UI:
-        onCreated({
-          _id: Math.random().toString(), // Temp ID until refresh
-          ...formData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+      if (res.success && res.announcement) {
+        onCreated(res.announcement);
+
+        setFormData({
+          title: "",
+          description: "",
+          isUrgent: false,
+          kind: "ANNOUNCEMENT",
+          commentsEnabled: true,
+          pollOptionsText: "",
         });
-
-        setFormData({ title: "", description: "", isUrgent: false });
         onClose();
       } else {
         alert(res.message);
@@ -87,6 +101,24 @@ export default function CreateAnnouncementModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
+            <Label htmlFor="kind">Type</Label>
+            <select
+              id="kind"
+              value={formData.kind}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  kind: event.target.value as "ANNOUNCEMENT" | "POLL",
+                })
+              }
+              className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+            >
+              <option value="ANNOUNCEMENT">Announcement</option>
+              <option value="POLL">Resident poll</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
@@ -98,6 +130,28 @@ export default function CreateAnnouncementModal({
               placeholder="e.g. Water Maintenance"
             />
           </div>
+
+          {formData.kind === "POLL" && (
+            <div className="space-y-2">
+              <Label htmlFor="pollOptions">Poll options</Label>
+              <Textarea
+                id="pollOptions"
+                required
+                value={formData.pollOptionsText}
+                onChange={(event) =>
+                  setFormData({
+                    ...formData,
+                    pollOptionsText: event.target.value,
+                  })
+                }
+                placeholder={"One option per line\nOption A\nOption B"}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter at least two options, one per line.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
@@ -125,6 +179,24 @@ export default function CreateAnnouncementModal({
               Mark as Urgent/Emergency
             </Label>
           </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="commentsEnabled"
+              checked={formData.commentsEnabled}
+              onCheckedChange={(checked) =>
+                setFormData({
+                  ...formData,
+                  commentsEnabled: checked === true,
+                })
+              }
+            />
+            <Label
+              htmlFor="commentsEnabled"
+              className="cursor-pointer font-normal"
+            >
+              Allow resident comments
+            </Label>
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
@@ -136,7 +208,7 @@ export default function CreateAnnouncementModal({
               className="bg-blue-600 hover:bg-blue-700"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Post Announcement
+              {formData.kind === "POLL" ? "Publish Poll" : "Post Announcement"}
             </Button>
           </DialogFooter>
         </form>

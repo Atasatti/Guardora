@@ -48,7 +48,11 @@ export async function createAnnouncement(data: CreateAnnouncementData) {
 
     if (result.success) {
       revalidatePath("/announcements");
-      return { success: true, message: "Announcement created successfully" };
+      return {
+        success: true,
+        message: "Announcement created successfully",
+        announcement: result.data,
+      };
     }
     return result;
   } catch (error) {
@@ -56,6 +60,29 @@ export async function createAnnouncement(data: CreateAnnouncementData) {
       success: false,
       message:
         error instanceof Error ? error.message : "An unknown error occurred",
+    };
+  }
+}
+
+export async function pinAnnouncement(id: string, isPinned: boolean) {
+  try {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/announcements/${id}/pin`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isPinned }),
+      }
+    );
+    const result = await handleApiResponse<Announcement>(response);
+    if (result.success) {
+      revalidatePath("/announcements");
+      return { success: true as const, announcement: result.data };
+    }
+    return result;
+  } catch (error) {
+    return {
+      success: false as const,
+      message: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

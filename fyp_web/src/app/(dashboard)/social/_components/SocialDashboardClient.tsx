@@ -60,10 +60,10 @@ export default function SocialDashboardClient({
   };
 
   return (
-    <div className="flex flex-col h-full w-full gap-6">
+    <div className="page-stack">
       <header>
-        <h1 className="text-3xl font-bold">Social & Marketplace</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="page-title">Social & Marketplace</h1>
+        <p className="page-description">
           Moderate user-generated content and community listings.
         </p>
       </header>

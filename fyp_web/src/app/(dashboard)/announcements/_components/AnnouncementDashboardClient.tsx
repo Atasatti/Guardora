@@ -9,6 +9,8 @@ import AnnouncementDataTable from "./AnnouncementDataTable";
 import { columns } from "./AnnouncementTableColumns";
 import CreateAnnouncementModal from "./CreateAnnouncementModal";
 import EditAnnouncementModal from "./EditAnnouncementModal";
+import { pinAnnouncement } from "@/lib/actions/announcements";
+import { toast } from "sonner";
 
 interface AnnouncementDashboardClientProps {
   initialAnnouncements: Announcement[];
@@ -25,6 +27,7 @@ export default function AnnouncementDashboardClient({
   // Stats
   const totalAnnouncements = announcements.length;
   const urgentAnnouncements = announcements.filter((a) => a.isUrgent).length;
+  const activePolls = announcements.filter((a) => a.kind === "POLL").length;
 
   // Handlers
   const handleCreated = (newItem: Announcement) => {
@@ -43,12 +46,12 @@ export default function AnnouncementDashboardClient({
 
   return (
     <>
-      <div className="flex flex-col h-full w-full gap-6">
+      <div className="page-stack">
         {/* --- Header --- */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <header className="page-header">
           <div>
-            <h1 className="text-3xl font-bold">Announcements</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="page-title">Announcements</h1>
+            <p className="page-description">
               Broadcast news and urgent alerts to residents
             </p>
           </div>
@@ -71,6 +74,18 @@ export default function AnnouncementDashboardClient({
               <div className="text-2xl font-bold">{totalAnnouncements}</div>
               <p className="text-xs text-muted-foreground">
                 Active announcements
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Resident Polls</CardTitle>
+              <Megaphone className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activePolls}</div>
+              <p className="text-xs text-muted-foreground">
+                Polls available for voting
               </p>
             </CardContent>
           </Card>
@@ -100,6 +115,22 @@ export default function AnnouncementDashboardClient({
               columns={columns({
                 onEdit: setSelectedAnnouncement,
                 onDelete: setSelectedAnnouncement,
+                onPin: async (item) => {
+                  const result = await pinAnnouncement(
+                    item._id,
+                    !item.isPinned
+                  );
+                  if (result.success) {
+                    handleUpdated(result.announcement);
+                    toast.success(
+                      result.announcement.isPinned
+                        ? "Announcement pinned"
+                        : "Announcement unpinned"
+                    );
+                  } else {
+                    toast.error(result.message);
+                  }
+                },
               })}
               data={announcements}
             />
