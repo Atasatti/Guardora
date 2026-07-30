@@ -79,4 +79,3 @@ python train_rfdetr.py \
 
 The existing script accepts COCO or YOLO dataset layouts. Repeat it once for the
 weapon/threat dataset and once for the fire/smoke dataset.
-

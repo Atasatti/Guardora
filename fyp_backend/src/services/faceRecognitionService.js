@@ -81,4 +81,3 @@ export const removeBannedPersonFromAi = async (identityId) =>
   requestAi(`/gallery/${encodeURIComponent(String(identityId))}`, {
     method: "DELETE",
   });
-

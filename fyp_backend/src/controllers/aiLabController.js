@@ -158,4 +158,3 @@ export const runAiLabTest = catchAsyncErrors(async (req, res, next) => {
     removeUploadFile(file.filename);
   }
 });
-

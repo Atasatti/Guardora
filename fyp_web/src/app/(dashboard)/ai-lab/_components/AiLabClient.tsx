@@ -913,4 +913,3 @@ export default function AiLabClient() {
     </div>
   );
 }
-

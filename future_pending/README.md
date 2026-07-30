@@ -26,4 +26,3 @@ Current snapshot:
   engine already exist.
 - Do not commit secrets, private camera URLs, resident biometric images, or
   provider credentials to Git.
-

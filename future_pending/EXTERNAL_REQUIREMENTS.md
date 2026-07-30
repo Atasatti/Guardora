@@ -24,4 +24,3 @@ to the repo.
 - Payments: successful sandbox checkout, signed webhook, refund/failure test.
 - SMS: provider delivery receipt for an emergency broadcast.
 - Maps: a route test showing an active risk zone being avoided.
-
