@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-const authBypassEnabled = process.env.AUTH_BYPASS === "true";
+const authBypassEnabled =
+  process.env.NODE_ENV !== "production" &&
+  process.env.AUTH_BYPASS === "true";
 const developmentToken = "guardora-local-auth-bypass";
 
 /**

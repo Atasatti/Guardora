@@ -15,12 +15,16 @@ const protectedRoutes = [
   "/moderation",
   "/marketplace",
   "/broadcast",
+  "/resident",
 ];
 
 const authRoutes = ["/login", "/forgot-password"];
 
-export async function middleware(request: NextRequest) {
-  if (process.env.AUTH_BYPASS === "true") {
+export async function proxy(request: NextRequest) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.AUTH_BYPASS === "true"
+  ) {
     return NextResponse.next();
   }
 
@@ -34,7 +38,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (protectedRoutes.includes(pathname)) {
+  const isProtected = protectedRoutes.some((route) =>
+    route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`)
+  );
+  if (isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

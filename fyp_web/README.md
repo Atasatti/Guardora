@@ -1,6 +1,6 @@
 # Guardora web dashboard
 
-Secure Nest is a Next.js 15 admin dashboard for managing a smart residential community.  
+Guardora Control is a Next.js 15 admin dashboard for managing a smart residential community.
 It includes security monitoring, visitor management, maintenance, facilities, billing, announcements, moderation, social, and messaging workflows.
 
 ## Tech Stack
@@ -25,6 +25,7 @@ It includes security monitoring, visitor management, maintenance, facilities, bi
 - Finance and billing
 - Announcements
 - Content moderation
+- AI Model Lab for controlled text, image, and video inference
 - Ads and social content management
 - Account settings
 

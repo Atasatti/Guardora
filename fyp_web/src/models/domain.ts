@@ -31,6 +31,18 @@ export type UserProfileError = {
 
 export type UserProfileResponse = UserProfileSuccess | UserProfileError;
 export type UserRole = "RESIDENT" | "ADMIN" | "MODERATOR";
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+export type ModeratorPermission =
+  | "MANAGE_USERS"
+  | "MANAGE_SURVEILLANCE"
+  | "MANAGE_VISITORS"
+  | "MANAGE_ALERTS"
+  | "MANAGE_CONTENT"
+  | "MANAGE_MAINTENANCE"
+  | "MANAGE_BILLING"
+  | "MANAGE_FACILITIES"
+  | "MANAGE_MAP"
+  | "MANAGE_ADS";
 
 // Based on your userModel.js
 export interface User {
@@ -41,6 +53,9 @@ export interface User {
   unitNumber: string;
   profilePicture?: string;
   role: UserRole;
+  accountStatus: AccountStatus;
+  permissions: ModeratorPermission[];
+  isVerified: boolean;
   socialStats: {
     totalFollowers: number;
     totalFollowing: number;
@@ -112,7 +127,7 @@ export interface Product {
 
 export type AlertType = "DANGEROUS_OBJECT" | "BANNED_PERSON" | "UNSAFE_AREA";
 
-export type AlertStatus = "NEW" | "REVIEWED" | "DISMISSED";
+export type AlertStatus = "NEW" | "REVIEWED" | "RESOLVED" | "DISMISSED";
 
 export interface SecurityAlert {
   _id: string;
@@ -127,6 +142,7 @@ export interface SecurityAlert {
     confidence?: number;
     personId?: string;
     personName?: string;
+    name?: string;
   };
 }
 
@@ -136,6 +152,25 @@ export interface AuditLog {
   action: string;
   target: string;
   timestamp: string;
+}
+
+export interface Notification {
+  _id: string;
+  type:
+    | "MESSAGE"
+    | "ANNOUNCEMENT"
+    | "EMERGENCY"
+    | "MAINTENANCE"
+    | "BILLING"
+    | "VISITOR"
+    | "SECURITY"
+    | "AD"
+    | "SYSTEM";
+  title: string;
+  message: string;
+  link?: string | null;
+  readAt?: string | null;
+  createdAt: string;
 }
 
 export interface BannedPerson {
@@ -155,7 +190,13 @@ export const TICKET_TYPES = [
   "OTHER",
 ] as const;
 
-export const TICKET_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED"] as const;
+export const TICKET_STATUSES = [
+  "PENDING",
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
 
 export type TicketType = (typeof TICKET_TYPES)[number];
 export type TicketStatus = (typeof TICKET_STATUSES)[number];
@@ -170,6 +211,14 @@ export interface MaintenanceTicket {
   closedAt: string | null;
   updatedAt: string;
   requester: UserSummary;
+  assignedTo?: UserSummary | null;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  expectedResolutionAt?: string | null;
+  feedback?: {
+    rating?: number | null;
+    comment?: string | null;
+    submittedAt?: string | null;
+  };
 }
 
 export interface CreateTicketData {
@@ -327,6 +376,15 @@ export interface Announcement {
   title: string;
   description: string;
   isUrgent: boolean;
+  kind: "ANNOUNCEMENT" | "POLL";
+  isPinned: boolean;
+  commentsEnabled: boolean;
+  expiresAt?: string | null;
+  pollOptions: {
+    _id: string;
+    text: string;
+    voters: string[];
+  }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -335,18 +393,29 @@ export interface CreateAnnouncementData {
   title: string;
   description: string;
   isUrgent: boolean;
+  kind?: "ANNOUNCEMENT" | "POLL";
+  commentsEnabled?: boolean;
+  expiresAt?: string | null;
+  pollOptions?: { text: string }[];
 }
 
 export interface UpdateAnnouncementData {
   title?: string;
   description?: string;
   isUrgent?: boolean;
+  commentsEnabled?: boolean;
+  expiresAt?: string | null;
 }
 
 // --- VISITORS TYPES ---
 
 export type VisitorType = "GUEST" | "SERVICE" | "DELIVERY" | "RIDE";
-export type VisitorStatus = "ACTIVE" | "EXPIRED";
+export type VisitorStatus =
+  | "ACTIVE"
+  | "CHECKED_IN"
+  | "CHECKED_OUT"
+  | "EXPIRED"
+  | "DENIED";
 
 export interface Visitor {
   _id: string;
@@ -383,7 +452,13 @@ export interface UpdateVisitorData {
 }
 
 // --- REPORTS TYPES ---
-export type ReportType = "SOCIAL_POST" | "MARKET_PRODUCT" | "PERSON" | "OTHER";
+export type ReportType =
+  | "SOCIAL_POST"
+  | "MARKET_PRODUCT"
+  | "PERSON"
+  | "OTHER"
+  | "INCIDENT"
+  | "DANGEROUS_AREA";
 export type ReportStatus = "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED";
 
 export interface Report {
