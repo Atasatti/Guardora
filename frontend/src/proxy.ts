@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySessionToken } from "@/lib/auth-token";
 
 const protectedRoutes = [
   "/",
@@ -30,8 +31,14 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
+  const jwtSecret = process.env.JWT_SECRET_KEY;
+  const tokenIsValid = Boolean(
+    token &&
+      jwtSecret &&
+      (await verifySessionToken(token, jwtSecret))
+  );
 
-  if (token) {
+  if (tokenIsValid) {
     if (authRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -42,10 +49,18 @@ export async function proxy(request: NextRequest) {
     route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`)
   );
   if (isProtected) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    if (token) {
+      response.cookies.delete("token");
+    }
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (token) {
+    response.cookies.delete("token");
+  }
+  return response;
 }
 
 export const config = {

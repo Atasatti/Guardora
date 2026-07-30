@@ -1,13 +1,76 @@
 "use server";
 
+import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { API_BASE_URL } from "../api-client";
+import { createSessionToken } from "../auth-token";
 import { fetchWithAuth, handleApiResponse } from "../server-utils";
 import type { LoginResponse } from "@/models";
 
+function secureEqual(value: string, expected: string): boolean {
+  const valueBuffer = Buffer.from(value);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    valueBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(valueBuffer, expectedBuffer)
+  );
+}
+
+async function tryBootstrapAdmin(credentials: {
+  email: string;
+  password: string;
+}) {
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  const jwtSecret = process.env.JWT_SECRET_KEY;
+
+  if (!email || !password || !jwtSecret) {
+    return false;
+  }
+
+  const submittedEmail = credentials.email.trim().toLowerCase();
+  if (
+    !secureEqual(submittedEmail, email) ||
+    !secureEqual(credentials.password, password)
+  ) {
+    return false;
+  }
+
+  const token = await createSessionToken(
+    {
+      id: "bootstrap-admin",
+      email,
+      role: "ADMIN",
+    },
+    jwtSecret
+  );
+  const cookieStore = await cookies();
+  cookieStore.set("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+
+  return true;
+}
+
 export async function login(credentials: { email: string; password: string }) {
   try {
+    if (await tryBootstrapAdmin(credentials)) {
+      return {
+        success: true,
+        message: "Login successful",
+        role: "ADMIN",
+      };
+    }
+
+    if (!API_BASE_URL) {
+      return { success: false, message: "Invalid email or password" };
+    }
+
     const res = await fetch(`${API_BASE_URL}/users/login`, {
       method: "POST",
       headers: {
@@ -29,6 +92,7 @@ export async function login(credentials: { email: string; password: string }) {
       cookieStore.set("token", data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 60 * 60 * 24 * 30,
         path: "/",
       });
