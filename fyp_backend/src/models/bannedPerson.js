@@ -17,8 +17,35 @@ const bannedPersonSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    lastSeenAt: {
+      type: Date,
+      default: null,
+    },
+    sightings: [
+      {
+        cameraName: {
+          type: String,
+          required: true,
+        },
+        confidence: {
+          type: Number,
+          default: null,
+        },
+        seenAt: {
+          type: Date,
+          default: Date.now,
+        },
+        alert: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "SecurityAlert",
+          default: null,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
+
+bannedPersonSchema.index({ lastSeenAt: -1 });
 
 export default mongoose.model("BannedPerson", bannedPersonSchema);

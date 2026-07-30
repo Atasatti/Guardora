@@ -9,7 +9,7 @@ const securityAlertSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["NEW", "REVIEWED", "DISMISSED"],
+      enum: ["NEW", "REVIEWED", "RESOLVED", "DISMISSED"],
       default: "NEW",
     },
     cameraName: {
@@ -27,9 +27,17 @@ const securityAlertSchema = new mongoose.Schema(
     details: {
       object: String, // e.g. "Gun", "Person"
       confidence: Number, // e.g. 0.85
+      name: String,
+    },
+    bannedPerson: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BannedPerson",
+      default: null,
     },
   },
   { timestamps: true }
 );
+
+securityAlertSchema.index({ bannedPerson: 1, timestamp: -1 });
 
 export default mongoose.model("SecurityAlert", securityAlertSchema);

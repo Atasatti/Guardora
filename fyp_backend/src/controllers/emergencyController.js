@@ -1,10 +1,24 @@
 import Emergency from "../models/emergency.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
+import { io } from "../server.js";
+import { recordAudit } from "../utils/audit.js";
+import { notifyRoles } from "../utils/notifications.js";
 
 // 1. Trigger SOS (Mobile App)
 const triggerSOS = catchAsyncErrors(async (req, res, next) => {
-  const { latitude, longitude } = req.body;
+  const latitude = Number(req.body.latitude);
+  const longitude = Number(req.body.longitude);
+  if (
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return next(new ErrorHandler("A valid live location is required", 400));
+  }
 
   // Check if active exists
   const activeEmergency = await Emergency.findOne({
@@ -22,17 +36,67 @@ const triggerSOS = catchAsyncErrors(async (req, res, next) => {
 
   const emergency = await Emergency.create({
     resident: req.user._id,
-    location: { latitude: latitude || 0, longitude: longitude || 0 },
+    location: { latitude, longitude },
+    locationHistory: [{ latitude, longitude }],
     status: "ACTIVE",
   });
 
-  // TODO: Send Socket.IO/Firebase alert to Admin Panel here
+  io.emit("emergency_triggered", emergency);
+  await Promise.all([
+    notifyRoles(["ADMIN", "MODERATOR"], {
+      type: "EMERGENCY",
+      title: `SOS from ${req.user.name}`,
+      message: `Live location: ${latitude}, ${longitude}`,
+      link: "/alerts",
+      metadata: { emergencyId: emergency._id, latitude, longitude },
+    }),
+    recordAudit({
+      req,
+      action: "SOS_TRIGGERED",
+      targetModel: "Emergency",
+      targetId: emergency._id,
+      details: { latitude, longitude },
+    }),
+  ]);
 
   res.status(201).json({
     success: true,
     message: "Emergency alert triggered!",
     emergency,
   });
+});
+
+const updateEmergencyLocation = catchAsyncErrors(async (req, res, next) => {
+  const latitude = Number(req.body.latitude);
+  const longitude = Number(req.body.longitude);
+  if (
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return next(new ErrorHandler("A valid live location is required", 400));
+  }
+  const emergency = await Emergency.findOne({
+    resident: req.user._id,
+    status: "ACTIVE",
+  });
+  if (!emergency) return next(new ErrorHandler("No active SOS found", 404));
+  emergency.location = { latitude, longitude };
+  emergency.locationHistory.push({ latitude, longitude });
+  if (emergency.locationHistory.length > 500) {
+    emergency.locationHistory = emergency.locationHistory.slice(-500);
+  }
+  await emergency.save();
+  io.emit("emergency_location_updated", {
+    emergencyId: emergency._id,
+    resident: emergency.resident,
+    location: emergency.location,
+    updatedAt: new Date(),
+  });
+  res.json({ success: true, emergency });
 });
 
 // 2. Cancel SOS (Resident - NEW)
@@ -53,7 +117,13 @@ const cancelSOS = catchAsyncErrors(async (req, res, next) => {
 
   await emergency.save();
 
-  // TODO: Emit event to Admin Panel to remove red alert
+  io.emit("emergency_resolved", emergency);
+  await recordAudit({
+    req,
+    action: "SOS_CANCELLED",
+    targetModel: "Emergency",
+    targetId: emergency._id,
+  });
 
   res.status(200).json({
     success: true,
@@ -83,8 +153,22 @@ const resolveEmergency = catchAsyncErrors(async (req, res, next) => {
   emergency.resolvedAt = Date.now();
 
   await emergency.save();
+  io.emit("emergency_resolved", emergency);
+  await recordAudit({
+    req,
+    action: "SOS_RESOLVED",
+    targetModel: "Emergency",
+    targetId: emergency._id,
+    details: { status: emergency.status },
+  });
 
   res.status(200).json({ success: true, emergency });
 });
 
-export { triggerSOS, cancelSOS, getActiveEmergencies, resolveEmergency };
+export {
+  triggerSOS,
+  updateEmergencyLocation,
+  cancelSOS,
+  getActiveEmergencies,
+  resolveEmergency,
+};
