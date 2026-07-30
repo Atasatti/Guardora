@@ -23,13 +23,13 @@ export default function SafetyMapDashboardClient({ initialAreas }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full w-full gap-6">
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <header className="page-header">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Map className="h-8 w-8 text-primary" /> Society Safety Map
+          <h1 className="page-title flex items-center gap-2">
+            <Map className="size-6 text-primary" /> Society Safety Map
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="page-description">
             Interactive sector monitoring. Click any block to manage status.
           </p>
         </div>

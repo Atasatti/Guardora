@@ -26,7 +26,12 @@ interface StreamData {
 export default function WebcamStream({
   onAlert,
 }: {
-  onAlert?: (type: string, camera: string) => void;
+  onAlert?: (
+    type: string,
+    camera: string,
+    snapshot: string,
+    name?: string
+  ) => void;
 }) {
   const [status, setStatus] = useState<"Offline" | "Connecting" | "Online">(
     "Offline"
@@ -38,6 +43,22 @@ export default function WebcamStream({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const streamRequestRef = useRef(0);
+
+  const stopWebcam = () => {
+    const video = videoRef.current;
+    const stream =
+      mediaStreamRef.current || (video?.srcObject as MediaStream | null);
+
+    video?.pause();
+    stream?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+
+    if (video) {
+      video.srcObject = null;
+    }
+  };
 
   const startStream = async () => {
     if (!WEBSOCKET_URL) {
@@ -45,6 +66,15 @@ export default function WebcamStream({
       return;
     }
 
+    const requestId = ++streamRequestRef.current;
+    const previousSocket = socketRef.current;
+    socketRef.current = null;
+    if (previousSocket) {
+      previousSocket.onclose = null;
+      previousSocket.onerror = null;
+      previousSocket.close(1000, "Camera restarting");
+    }
+    stopWebcam();
     setStatus("Connecting");
 
     try {
@@ -53,21 +83,49 @@ export default function WebcamStream({
         audio: false,
       });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+      if (requestId !== streamRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      const video = videoRef.current;
+      if (!video) {
+        stream.getTracks().forEach((track) => track.stop());
+        throw new Error("Webcam video element is unavailable");
+      }
+
+      mediaStreamRef.current = stream;
+      video.srcObject = stream;
+
+      try {
+        await video.play();
+      } catch (error) {
+        if (requestId !== streamRequestRef.current) return;
+        if (error instanceof DOMException && error.name === "AbortError") {
+          stopWebcam();
+          setStatus("Offline");
+          return;
+        }
+        throw error;
+      }
+
+      if (requestId !== streamRequestRef.current) {
+        stopWebcam();
+        return;
       }
 
       const ws = new WebSocket(WEBSOCKET_URL);
       socketRef.current = ws;
 
       ws.onopen = () => {
-        console.log("Connected to Face Recognition Server");
+        if (socketRef.current !== ws) return;
         setStatus("Online");
         toast.success("Webcam AI Active");
       };
 
       ws.onmessage = (event) => {
+        if (socketRef.current !== ws) return;
+
         try {
           const data: StreamData = JSON.parse(event.data);
 
@@ -80,7 +138,12 @@ export default function WebcamStream({
             setDetectedName(data.name || "Unknown");
 
             if (onAlert) {
-              onAlert("BANNED_PERSON", `Webcam (${data.name || "Unknown"})`);
+              onAlert(
+                "BANNED_PERSON",
+                "Park Area (Webcam)",
+                `data:image/jpeg;base64,${data.frame}`,
+                data.name || "Unknown"
+              );
             }
           } else {
             setIsAlerting(false);
@@ -92,27 +155,25 @@ export default function WebcamStream({
       };
 
       ws.onclose = () => {
+        if (socketRef.current !== ws) return;
+        socketRef.current = null;
+        streamRequestRef.current += 1;
         setStatus("Offline");
         toast.error("Face Server Disconnected");
         stopWebcam();
       };
 
       ws.onerror = () => {
+        if (socketRef.current !== ws) return;
         setStatus("Offline");
         toast.error("Connection Failed");
       };
     } catch (err) {
+      if (requestId !== streamRequestRef.current) return;
       console.error("Webcam Access Error:", err);
       toast.error("Camera permission denied or unavailable.");
+      stopWebcam();
       setStatus("Offline");
-    }
-  };
-
-  const stopWebcam = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
     }
   };
 
@@ -126,6 +187,14 @@ export default function WebcamStream({
 
     const intervalId = setInterval(() => {
       if (socketRef.current?.readyState === WebSocket.OPEN && ctx) {
+        if (
+          video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+          video.videoWidth === 0 ||
+          video.videoHeight === 0
+        ) {
+          return;
+        }
+
         if (canvas.width !== video.videoWidth) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
@@ -143,7 +212,14 @@ export default function WebcamStream({
 
   useEffect(() => {
     return () => {
-      socketRef.current?.close();
+      streamRequestRef.current += 1;
+      const socket = socketRef.current;
+      socketRef.current = null;
+      if (socket) {
+        socket.onclose = null;
+        socket.onerror = null;
+        socket.close(1000, "Component unmounted");
+      }
       stopWebcam();
     };
   }, []);
@@ -195,7 +271,7 @@ export default function WebcamStream({
           )}
 
           {/* Hidden Raw Video & Canvas */}
-          <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+          <video ref={videoRef} playsInline muted className="hidden" />
           <canvas ref={canvasRef} className="hidden" />
 
           {/* Start Button Overlay */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Video,
@@ -12,75 +12,130 @@ import {
 import { config } from "@/lib/config";
 
 interface StreamData {
-  frame: string;
-  hasAlert: boolean;
-  alertType: string;
+  frame?: string;
+  hasAlert?: boolean;
+  alertType?: string;
+  name?: string;
+  error?: string;
 }
 
 export default function VideoStream({
   videoName,
+  cameraId,
   title,
   onAlert,
 }: {
   videoName: string;
+  cameraId?: string;
   title: string;
-  onAlert?: (type: string, camera: string) => void;
+  onAlert?: (
+    type: string,
+    camera: string,
+    snapshot: string,
+    name?: string
+  ) => void;
 }) {
+  const websocketUrl = config.ai.streamWebSocket
+    ? cameraId
+      ? `${config.ai.streamWebSocket}/ws_camera/${encodeURIComponent(cameraId)}`
+      : `${config.ai.streamWebSocket}/ws/${encodeURIComponent(videoName)}`
+    : "";
   const [frameSrc, setFrameSrc] = useState<string>("");
   const [socketStatus, setSocketStatus] = useState<
     "Connecting" | "Online" | "Offline"
-  >("Connecting");
+  >(websocketUrl ? "Connecting" : "Offline");
   const [isAlerting, setIsAlerting] = useState(false);
-
-  const websocketUrl = config.ai.streamWebSocket
-    ? `${config.ai.streamWebSocket}/ws/${encodeURIComponent(videoName)}`
-    : "";
+  const [alertLabel, setAlertLabel] = useState("");
+  const onAlertRef = useRef(onAlert);
 
   useEffect(() => {
-    if (!websocketUrl) {
-      setSocketStatus("Offline");
-      return;
-    }
+    onAlertRef.current = onAlert;
+  }, [onAlert]);
 
-    const ws = new WebSocket(websocketUrl);
+  useEffect(() => {
+    if (!websocketUrl) return;
 
-    ws.onopen = () => {
-      console.log(`Connected to AI Stream: ${videoName}`);
-      setSocketStatus("Online");
-    };
+    let active = true;
+    let socket: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempt = 0;
 
-    ws.onmessage = (event) => {
-      try {
-        const data: StreamData = JSON.parse(event.data);
+    const connect = () => {
+      if (!active) return;
 
-        if (data.frame) {
-          setFrameSrc(`data:image/jpeg;base64,${data.frame}`);
+      setSocketStatus("Connecting");
+      socket = new WebSocket(websocketUrl);
+
+      socket.onopen = () => {
+        if (!active) return;
+        reconnectAttempt = 0;
+        setSocketStatus("Online");
+      };
+
+      socket.onmessage = (event) => {
+        if (!active) return;
+
+        try {
+          const data: StreamData = JSON.parse(event.data);
+          if (data.error) {
+            console.warn(`AI stream ${videoName}: ${data.error}`);
+            return;
+          }
+
+          if (data.frame) {
+            setFrameSrc(`data:image/jpeg;base64,${data.frame}`);
+          }
+
+          if (data.hasAlert && data.alertType) {
+            setIsAlerting(true);
+            setAlertLabel(
+              data.alertType === "BANNED_PERSON" && data.name
+                ? `BANNED: ${data.name}`
+                : data.alertType.replaceAll("_", " ")
+            );
+            onAlertRef.current?.(
+              data.alertType,
+              title,
+              `data:image/jpeg;base64,${data.frame || ""}`,
+              data.name
+            );
+          } else {
+            setIsAlerting(false);
+            setAlertLabel("");
+          }
+        } catch {
+          console.warn(`AI stream ${videoName} returned an invalid frame`);
         }
+      };
 
-        if (data.hasAlert) {
-          setIsAlerting(true);
-          if (onAlert) onAlert(data.alertType, title);
-        } else {
-          setIsAlerting(false);
-        }
-      } catch (e) {
-        console.error("Frame parse error: ", e);
-      }
+      socket.onerror = () => {
+        if (active) setSocketStatus("Offline");
+      };
+
+      socket.onclose = () => {
+        if (!active) return;
+
+        setSocketStatus("Offline");
+        reconnectAttempt += 1;
+        const retryDelay = Math.min(1000 * 2 ** (reconnectAttempt - 1), 10000);
+        reconnectTimer = setTimeout(connect, retryDelay);
+      };
     };
 
-    ws.onclose = () => {
-      setSocketStatus("Offline");
-    };
-
-    ws.onerror = (err) => {
-      console.error(`WebSocket Error for ${videoName}:`, err);
-      setSocketStatus("Offline");
-    };
+    connect();
 
     return () => {
-      ws.close();
+      active = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+
+      if (
+        socket?.readyState === WebSocket.OPEN ||
+        socket?.readyState === WebSocket.CONNECTING
+      ) {
+        socket.close(1000, "Component unmounted");
+      }
     };
-  }, [videoName, websocketUrl, title, onAlert]);
+  }, [videoName, websocketUrl, title]);
 
   const getStatusIcon = () => {
     if (socketStatus === "Connecting")
@@ -130,7 +185,7 @@ export default function VideoStream({
           {/* Overlay Overlay if Alerting */}
           {isAlerting && (
             <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold animate-pulse">
-              THREAT DETECTED
+              {alertLabel || "THREAT DETECTED"}
             </div>
           )}
         </div>

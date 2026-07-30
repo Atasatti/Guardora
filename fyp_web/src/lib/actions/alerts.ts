@@ -52,3 +52,30 @@ export async function updateAlertStatus(
     };
   }
 }
+
+export async function createSurveillanceAlert(payload: {
+  type: "DANGEROUS_OBJECT" | "BANNED_PERSON" | "UNSAFE_AREA";
+  cameraName: string;
+  snapshotBase64: string;
+  details?: {
+    object?: string;
+    confidence?: number;
+    name?: string;
+  };
+}) {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/alerts/manual`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const result = await handleApiResponse<{ alert: SecurityAlert }>(response);
+    return result.success
+      ? { success: true as const, alert: result.data.alert }
+      : result;
+  } catch (error) {
+    return {
+      success: false as const,
+      message: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

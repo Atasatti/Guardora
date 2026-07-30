@@ -9,6 +9,7 @@ import {
   type SetStateAction,
 } from "react";
 import { STORAGE_BASE_URL } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export default function BannedPersonsTab({
   bannedPersons,
@@ -27,6 +28,31 @@ export default function BannedPersonsTab({
 
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [timelineName, setTimelineName] = useState("");
+  const [timeline, setTimeline] = useState<
+    Array<{ cameraName: string; confidence?: number; seenAt: string }>
+  >([]);
+
+  const loadTimeline = async (personId: string) => {
+    const response = await fetch(
+      `/api/resident/banned-persons/${personId}/timeline`,
+      { cache: "no-store" }
+    );
+    if (!response.ok) {
+      toast.error("Movement timeline could not be loaded");
+      return;
+    }
+    const body = (await response.json()) as {
+      person: { name: string };
+      timeline: Array<{
+        cameraName: string;
+        confidence?: number;
+        seenAt: string;
+      }>;
+    };
+    setTimelineName(body.person.name);
+    setTimeline(body.timeline);
+  };
 
   /** ======================
    *  FILE UPLOAD HANDLER
@@ -80,8 +106,13 @@ export default function BannedPersonsTab({
    *  ADD BANNED PERSON (FORM SUBMIT)
    =======================*/
   const handleAdd = async () => {
-    if (!name || !reason) {
-      alert("Name and reason are required");
+    if (!name.trim() || !reason.trim()) {
+      toast.error("Name and reason are required");
+      return;
+    }
+
+    if (!selectedFile && !imagePreview) {
+      toast.error("Add one clear, front-facing face photo");
       return;
     }
 
@@ -107,9 +138,10 @@ export default function BannedPersonsTab({
       const result = await banPerson(formData);
 
       if (!result.success) {
-        alert(result.message || "Something went wrong");
+        toast.error(result.message || "Face enrollment failed");
       } else {
         setBannedPersons((prev) => [...prev, result.person]);
+        toast.success("Person enrolled in live face recognition");
 
         // Reset Form
         setName("");
@@ -119,7 +151,7 @@ export default function BannedPersonsTab({
       }
     } catch (err) {
       console.error(err);
-      alert("Error submitting data");
+      toast.error("Error submitting data");
     }
 
     setIsAdding(false);
@@ -220,14 +252,68 @@ export default function BannedPersonsTab({
                 <div className="w-16 h-16 bg-gray-300 rounded" />
               )}
 
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">{person.name}</p>
                 <p className="text-sm text-gray-600">{person.reason}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => loadTimeline(person._id)}
+                className="rounded border px-3 py-2 text-xs font-semibold hover:bg-muted"
+              >
+                Movement timeline
+              </button>
             </li>
           ))}
         </ul>
       </div>
+      {timelineName && (
+        <div className="rounded-md border p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">{timelineName}</h2>
+              <p className="text-sm text-muted-foreground">
+                Cross-camera face-recognition sightings
+              </p>
+            </div>
+            <button
+              type="button"
+              className="text-sm text-muted-foreground"
+              onClick={() => {
+                setTimelineName("");
+                setTimeline([]);
+              }}
+            >
+              Close
+            </button>
+          </div>
+          <div className="space-y-2">
+            {timeline.map((sighting, index) => (
+              <div
+                key={`${sighting.cameraName}-${sighting.seenAt}-${index}`}
+                className="flex items-center justify-between rounded border p-3 text-sm"
+              >
+                <div>
+                  <p className="font-medium">{sighting.cameraName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(sighting.seenAt).toLocaleString()}
+                  </p>
+                </div>
+                <span className="font-mono text-xs">
+                  {sighting.confidence == null
+                    ? "—"
+                    : `${Math.round(sighting.confidence * 100)}%`}
+                </span>
+              </div>
+            ))}
+            {!timeline.length && (
+              <p className="rounded border border-dashed p-5 text-center text-sm text-muted-foreground">
+                No sightings recorded yet.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

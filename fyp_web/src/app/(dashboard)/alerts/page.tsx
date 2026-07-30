@@ -8,9 +8,12 @@ export default async function AlertsPage() {
   const viewModel = await loadAlertsViewModel();
 
   return (
-    <div className="flex flex-col h-full w-full gap-6 p-6">
+    <div className="page-stack">
       <header>
-        <h1 className="text-3xl font-bold">Alerts & Banned Persons</h1>
+        <h1 className="page-title">Alerts & Banned Persons</h1>
+        <p className="page-description">
+          Review live security events and manage restricted access records.
+        </p>
       </header>
       <Suspense fallback={<PageLoader />}>
         {viewModel.status === "ready" ? (
