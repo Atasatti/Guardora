@@ -167,7 +167,8 @@ The obsolete model that stored raw card numbers/CVV was replaced with tokenized 
 - Local concurrent smoke tests pass the feed/search/map/notification targets with p95 below 11 ms. Production-like load, alert delivery, mobile location and poll-result targets still require deployed infrastructure testing.
 - Horizontal reliability requires a Redis Socket.IO adapter, distributed background queue, object storage, monitoring, backups, and multiple service instances. Activation codes themselves now persist in MongoDB.
 - MongoDB indexes are present, but the document’s proposed PostgreSQL + MongoDB hybrid was not introduced. The current implementation consistently uses MongoDB/Mongoose.
-- Uploaded files are local-disk assets. Vercel/serverless production needs S3, Cloudinary, or equivalent object storage.
+- Uploaded files are local-disk assets. Ephemeral or serverless production
+  needs S3, Cloudinary, or equivalent object storage.
 - Rate limiting, trusted-origin protection and security headers are implemented. Dependency scanning and an independent penetration test remain deployment gates.
 
 ### Blocked by missing source or external configuration
