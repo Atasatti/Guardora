@@ -1,6 +1,10 @@
 import express from "express";
 import upload from "../multer.js";
-import { isUserAuthenticated, authorizeRoles } from "../middlewares/auth.js";
+import {
+  isUserAuthenticated,
+  authorizePermissions,
+  authorizeRoles,
+} from "../middlewares/auth.js";
 import {
   createUser,
   activateUser,
@@ -15,18 +19,31 @@ import {
   getUserById,
   getUsers,
   toggleFollowUser,
+  toggleBlockUser,
+  updateNotificationPreferences,
+  updatePrivacySettings,
   adminGetAllUsers,
   adminCreateUser,
   adminUpdateUser,
   adminDeleteUser,
   getProfile,
+  getSocketToken,
+  listHouseholdProfiles,
+  createHouseholdProfile,
+  updateHouseholdProfile,
+  selectHouseholdProfile,
+  deleteHouseholdProfile,
 } from "../controllers/userController.js";
+import { rateLimit } from "../middlewares/security.js";
 
 const router = express.Router();
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+const registrationLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5 });
 
 // Protected routes (require authentication)
 router.post("/logout", isUserAuthenticated, logoutUser);
 router.get("/me", isUserAuthenticated, getUserInfo);
+router.get("/socket-token", isUserAuthenticated, getSocketToken);
 router.put("/update-info", isUserAuthenticated, updateUserInfo);
 router.put(
   "/update-profile-picture",
@@ -40,19 +57,52 @@ router.put(
   updateEmergencyContact
 );
 router.put("/change-password", isUserAuthenticated, changePassword);
+router.put(
+  "/notification-preferences",
+  isUserAuthenticated,
+  updateNotificationPreferences
+);
+router.put("/privacy-settings", isUserAuthenticated, updatePrivacySettings);
+router.post("/block/:userId", isUserAuthenticated, toggleBlockUser);
+router.get(
+  "/household-profiles",
+  isUserAuthenticated,
+  listHouseholdProfiles
+);
+router.post(
+  "/household-profiles",
+  isUserAuthenticated,
+  createHouseholdProfile
+);
+router.put(
+  "/household-profiles/:profileId",
+  isUserAuthenticated,
+  updateHouseholdProfile
+);
+router.patch(
+  "/household-profiles/:profileId/select",
+  isUserAuthenticated,
+  selectHouseholdProfile
+);
+router.delete(
+  "/household-profiles/:profileId",
+  isUserAuthenticated,
+  deleteHouseholdProfile
+);
 
 // Admin Routes
 router.get(
   "/admin/all",
   isUserAuthenticated,
   authorizeRoles("ADMIN", "MODERATOR"),
+  authorizePermissions("MANAGE_USERS"),
   adminGetAllUsers
 );
 
 router.post(
   "/admin/create",
   isUserAuthenticated,
-  authorizeRoles("ADMIN", "MODERATOR"),
+  authorizeRoles("ADMIN"),
   upload.single("file"), // Allow profile pic upload on creation
   adminCreateUser
 );
@@ -61,24 +111,29 @@ router.put(
   "/admin/update/:id",
   isUserAuthenticated,
   authorizeRoles("ADMIN", "MODERATOR"),
+  authorizePermissions("MANAGE_USERS"),
   adminUpdateUser
 );
 
 router.delete(
   "/admin/delete/:id",
   isUserAuthenticated,
-  authorizeRoles("ADMIN", "MODERATOR"),
+  authorizeRoles("ADMIN"),
   adminDeleteUser
 );
 
-// Public routes
 router.post("/me", isUserAuthenticated, getProfile);
-router.post("/register", upload.single("file"), createUser);
-router.post("/activation", activateUser);
-router.post("/resend-activation", resendActivationCode);
-router.post("/login", loginUser);
+router.post(
+  "/register",
+  registrationLimiter,
+  upload.single("file"),
+  createUser
+);
+router.post("/activation", authLimiter, activateUser);
+router.post("/resend-activation", authLimiter, resendActivationCode);
+router.post("/login", authLimiter, loginUser);
 router.post("/follow/:userId", isUserAuthenticated, toggleFollowUser);
-router.get("/:id", getUserById);
-router.get("/", getUsers);
+router.get("/:id", isUserAuthenticated, getUserById);
+router.get("/", isUserAuthenticated, getUsers);
 
 export default router;
