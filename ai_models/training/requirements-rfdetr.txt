@@ -1,0 +1,2 @@
+# RF-DETR requires Python 3.10+.
+rfdetr>=1.7,<2
