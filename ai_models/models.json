@@ -1,11 +1,13 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "models": [
     {
       "id": "weapon-threat-yolov8n",
       "task": "weapon and threat object detection",
       "local_dir": "weapon_threat_yolov8n",
       "license": "MIT",
+      "runtime_license": "Ultralytics runtime is AGPL-3.0 or requires an enterprise license",
+      "deployment_status": "demo_only",
       "source": {
         "provider": "Hugging Face",
         "repository": "Subh775/Threat-Detection-YOLOv8n",
@@ -31,6 +33,8 @@
       "task": "fire and smoke object detection",
       "local_dir": "fire_smoke_yolov8n",
       "license": "AGPL-3.0",
+      "runtime_license": "Ultralytics runtime is AGPL-3.0 or requires an enterprise license",
+      "deployment_status": "demo_only",
       "source": {
         "provider": "Hugging Face",
         "repository": "rabahdev/fire-smoke-yolov8n",
@@ -54,6 +58,7 @@
       "task": "video violence classification",
       "local_dir": "violence_x3d",
       "license": "Source card describes MIT with research/non-commercial wording",
+      "deployment_status": "research_only",
       "source": {
         "provider": "Hugging Face",
         "repository": "visionlab-ai/school-violence-detection-models",
@@ -79,6 +84,7 @@
       "task": "face detection and landmarks",
       "local_dir": "face_yunet",
       "license": "MIT",
+      "deployment_status": "production_candidate",
       "source": {
         "provider": "Hugging Face",
         "repository": "opencv/face_detection_yunet",
@@ -110,6 +116,7 @@
       "task": "face embedding and recognition",
       "local_dir": "face_sface",
       "license": "Apache-2.0",
+      "deployment_status": "production_candidate",
       "source": {
         "provider": "Hugging Face",
         "repository": "opencv/face_recognition_sface",
@@ -139,4 +146,3 @@
     }
   ]
 }
-

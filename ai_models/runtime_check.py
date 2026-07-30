@@ -62,7 +62,10 @@ def main() -> int:
         ),
         (
             "violence-x3d",
-            "import torch; "
+            "import numpy, torch; "
+            "from numpy._core.multiarray import scalar; "
+            "torch.serialization.add_safe_globals("
+            "[scalar,numpy.dtype,numpy.dtypes.Float64DType]); "
             "m=torch.load('violence_x3d/final/final_x3d_realtime.pt',"
             "map_location='cpu',weights_only=True); assert m",
         ),
