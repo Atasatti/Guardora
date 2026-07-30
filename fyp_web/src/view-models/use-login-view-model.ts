@@ -19,7 +19,7 @@ export function useLoginViewModel() {
 
     if (result.success) {
       toast.success(result.message);
-      router.push("/");
+      router.push(result.role === "RESIDENT" ? "/resident" : "/");
       return;
     }
 

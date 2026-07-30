@@ -25,10 +25,6 @@ export async function login(credentials: { email: string; password: string }) {
     const data: LoginResponse = await res.json();
 
     if (data.success && data.user && data.token) {
-      if (data.user.role !== "ADMIN" && data.user.role !== "MODERATOR") {
-        return { success: false, message: "Access Denied: Not an admin." };
-      }
-
       const cookieStore = await cookies();
       cookieStore.set("token", data.token, {
         httpOnly: true,
@@ -37,7 +33,11 @@ export async function login(credentials: { email: string; password: string }) {
         path: "/",
       });
 
-      return { success: true, message: "Login successful" };
+      return {
+        success: true,
+        message: "Login successful",
+        role: data.user.role,
+      };
     } else {
       return {
         success: false,
