@@ -1,6 +1,6 @@
 {
-  "name": "Secure Nest",
-  "short_name": "S-Nest",
+  "name": "Guardora Control",
+  "short_name": "Guardora",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +15,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#071821",
+  "background_color": "#f4f7f9",
   "display": "standalone"
 }
