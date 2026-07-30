@@ -44,12 +44,33 @@ import { handleStripeWebhook } from "./controllers/billController.js";
 
 dotenv.config();
 
+// Fail fast on missing authentication configuration instead of returning 503
+// on every authenticated request once the process is already serving traffic.
+const requiredSecrets = ["JWT_SECRET_KEY"];
+if (process.env.NODE_ENV === "production") {
+  requiredSecrets.push(
+    "CORS_ORIGINS",
+    "AI_SERVICE_API_KEY",
+    "AI_STREAM_TOKEN_SECRET"
+  );
+}
+const missingSecrets = requiredSecrets.filter((key) => !process.env[key]);
+if (missingSecrets.length > 0) {
+  throw new Error(
+    `Missing required environment variables: ${missingSecrets.join(", ")}`
+  );
+}
+
 const databaseReady = connectDB().catch(() => {
   process.exitCode = 1;
   throw new Error("Database connection failed");
 });
 
 const app = express();
+// Behind exactly one reverse proxy (Hugging Face, Render, Vercel). Required for
+// req.ip to reflect the real client instead of the proxy, which the rate
+// limiter depends on.
+app.set("trust proxy", 1);
 const corsOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
@@ -194,8 +215,10 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use("/uploads", express.static(uploadsDirectory));
+// Security headers must run before the static mount so uploaded files are
+// served with nosniff and framing protection too.
 app.use(securityHeaders);
+app.use("/uploads", express.static(uploadsDirectory));
 
 app.use(
   cors({

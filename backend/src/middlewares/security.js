@@ -5,10 +5,10 @@ const buckets = new Map();
 
 const rateLimit = ({ windowMs = 15 * 60 * 1000, max = 20 } = {}) => {
   return (req, res, next) => {
-    const forwarded = String(req.headers["x-forwarded-for"] || "")
-      .split(",")[0]
-      .trim();
-    const identity = forwarded || req.ip || req.socket.remoteAddress || "unknown";
+    // req.ip resolves the client through the configured `trust proxy` hop
+    // count. Never read X-Forwarded-For directly: the header is attacker
+    // controlled, so keying buckets on it lets a client reset its own limit.
+    const identity = req.ip || req.socket.remoteAddress || "unknown";
     const key = `${identity}:${req.baseUrl}:${req.path}`;
     const now = Date.now();
     const existing = buckets.get(key);
