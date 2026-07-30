@@ -6,12 +6,12 @@ export default (err, req, res, next) => {
 
   // Multer errors
   if (err.code === "LIMIT_FILE_SIZE") {
-    err.message = "File too large. Maximum size is 5MB.";
+    err.message = "File too large. Maximum size is 25MB.";
     err.statusCode = 400;
   }
 
   if (err.code === "LIMIT_UNEXPECTED_FILE") {
-    err.message = "Unexpected field. Please upload only one image.";
+    err.message = "Unexpected upload field or too many files.";
     err.statusCode = 400;
   }
 

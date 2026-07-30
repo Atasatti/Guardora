@@ -8,7 +8,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "check": "node --check src/server.js"
+    "check": "node scripts/check-source.mjs",
+    "test:performance": "node scripts/smoke-load.mjs"
   },
   "repository": {
     "type": "git",
