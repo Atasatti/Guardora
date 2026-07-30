@@ -7,13 +7,24 @@ const paymentCardSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    name: {
+    cardholderName: {
       type: String,
       required: true,
     },
-    creditCardNumber: {
+    provider: {
+      type: String,
+      enum: ["STRIPE", "PAYPAL"],
+      required: true,
+    },
+    providerPaymentMethodId: {
       type: String,
       required: true,
+      select: false,
+    },
+    last4: {
+      type: String,
+      required: true,
+      match: /^\d{4}$/,
     },
     expiryMonth: {
       type: Number,
@@ -25,15 +36,9 @@ const paymentCardSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    cvv: {
-      type: Number,
-      required: true,
-      min: 100,
-      max: 9999,
-    },
     brand: {
       type: String,
-      enum: ["VISA", "MASTERCARD", "PAYPAK"],
+      enum: ["VISA", "MASTERCARD", "PAYPAK", "AMEX", "OTHER"],
       required: true,
     },
     color: {
@@ -44,5 +49,7 @@ const paymentCardSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+paymentCardSchema.index({ user: 1, providerPaymentMethodId: 1 }, { unique: true });
 
 export default mongoose.model("PaymentCard", paymentCardSchema);
