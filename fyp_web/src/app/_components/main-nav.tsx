@@ -1,191 +1,178 @@
+"use client";
+
 import Link from "next/link";
-import Image from "next/image";
-import { Separator } from "@/components/ui/separator";
+import { usePathname } from "next/navigation";
 import {
-  Home,
+  BarChart3,
+  Building2,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Gauge,
+  Globe2,
+  FlaskConical,
+  Map,
+  Megaphone,
+  MessageSquare,
+  ShieldCheck,
+  ShieldEllipsis,
+  Siren,
+  Sparkles,
   Users,
   Video,
-  Siren,
-  ClipboardList,
-  Map,
   Wrench,
-  Building,
-  CreditCard,
-  Megaphone,
-  ShieldCheck,
-  Globe,
-  ShieldAlert,
-  MessageSquare,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Helper: NavText that adapts to screen size
-const NavText = ({ text }: { text: string }) => (
-  <span
-    className="
-      whitespace-nowrap overflow-hidden transition-all duration-200 ease-in-out
-      
-      /* Mobile: Always Visible */
-      w-auto opacity-100 ml-2
-
-      /* Desktop: Hidden by default, Reveal on Hover */
-      md:w-0 md:opacity-0 md:ml-0
-      md:group-hover:w-auto md:group-hover:opacity-100 md:group-hover:ml-2
-    "
-  >
-    {text}
-  </span>
-);
-
-const NavLink = ({
-  href,
-  icon: Icon,
-  children,
-}: {
+type NavItem = {
   href: string;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  children: React.ReactNode;
-}) => (
-  <Link
-    href={href}
-    className="
-      flex items-center gap-2 py-2 rounded-lg text-muted-foreground transition-all hover:text-primary
-      
-      /* Mobile: Always Left Aligned with padding */
-      justify-start px-2.5
+  label: string;
+  icon: LucideIcon;
+};
 
-      /* Desktop: Centered (Collapsed) -> Left Aligned (Expanded) */
-      md:justify-center md:px-0
-      md:group-hover:justify-start md:group-hover:px-2.5
-    "
-  >
-    <Icon className="h-4 w-4 shrink-0" />
-    {children}
-  </Link>
-);
+const groups: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Command center",
+    items: [
+      { href: "/", label: "Overview", icon: Gauge },
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/ai-lab", label: "AI model lab", icon: FlaskConical },
+      { href: "/messages", label: "Messages", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "Safety & access",
+    items: [
+      { href: "/surveillance", label: "Surveillance", icon: Video },
+      { href: "/alerts", label: "Alerts & logs", icon: Siren },
+      { href: "/reports", label: "Incident reports", icon: ShieldEllipsis },
+      { href: "/visitors", label: "Visitor access", icon: ClipboardList },
+      { href: "/map", label: "Safety map", icon: Map },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { href: "/users", label: "Residents", icon: Users },
+      { href: "/maintenance", label: "Maintenance", icon: Wrench },
+      { href: "/facilities", label: "Facilities", icon: Building2 },
+      { href: "/finance", label: "Finance", icon: CreditCard },
+    ],
+  },
+  {
+    label: "Community",
+    items: [
+      { href: "/announcements", label: "Announcements", icon: Megaphone },
+      { href: "/moderation", label: "AI moderation", icon: Sparkles },
+      { href: "/ads", label: "Ad campaigns", icon: Globe2 },
+      { href: "/social", label: "Social & marketplace", icon: Globe2 },
+    ],
+  },
+];
 
-// Helper: Section Header
-const NavHeader = ({ text }: { text: string }) => (
-  <h3
-    className="
-      flex items-center h-6 text-xs font-semibold uppercase text-muted-foreground
-      
-      /* Mobile: Always Left */
-      justify-start px-2
+function isActive(pathname: string, href: string) {
+  return href === "/"
+    ? pathname === "/"
+    : pathname === href || pathname.startsWith(`${href}/`);
+}
 
-      /* Desktop: Center -> Left */
-      md:justify-center md:px-0
-      md:group-hover:justify-start md:group-hover:px-2
-    "
-  >
-    <NavText text={text} />
-    {/* Fallback Dot for Desktop Collapsed State */}
-    <span className="hidden md:block md:group-hover:hidden">•</span>
-  </h3>
-);
+export function MainNav({
+  className,
+  onNavigate,
+}: {
+  className?: string;
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
 
-export function MainNav({ className }: { className?: string }) {
   return (
     <nav
+      aria-label="Primary navigation"
       className={cn(
-        "flex flex-col gap-4 p-4 overflow-y-auto scrollbar-hide h-full bg-background border-r",
-        // Desktop Sliding Logic:
-        // 1. Fixed width on mobile (handled by Sheet)
-        // 2. Variable width on Desktop (w-16 -> w-64)
-        "md:w-20 md:hover:w-64 md:transition-[width] md:duration-300 md:ease-in-out group z-50",
+        "flex h-full w-full flex-col overflow-y-auto bg-sidebar px-4 py-5 text-sidebar-foreground",
         className
       )}
     >
-      {/* Logo Area */}
       <Link
         href="/"
-        className="
-          flex items-center gap-2 font-semibold h-10 shrink-0
-          /* Mobile: Left */
-          justify-start px-2.5
-          /* Desktop: Center -> Left */
-          md:justify-center md:px-0
-          md:group-hover:justify-start md:group-hover:px-2.5
-        "
+        onClick={onNavigate}
+        className="mb-7 flex items-center gap-3 rounded-2xl px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
       >
-        <Image
-          src="/logo.png"
-          alt="SecureNest Logo"
-          width={24}
-          height={24}
-          className="h-6 w-6 shrink-0"
-        />
-        <NavText text="Secure Nest" />
+        <span className="brand-mark" aria-hidden="true">
+          <ShieldCheck className="size-5" strokeWidth={2.4} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[1.05rem] font-semibold tracking-[-0.025em]">
+            Guardora
+          </span>
+          <span className="block text-[0.68rem] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/45">
+            Safety operations
+          </span>
+        </span>
       </Link>
 
-      <Separator />
+      <div className="space-y-5">
+        {groups.map((group) => (
+          <section key={group.label}>
+            <h2 className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/40">
+              {group.label}
+            </h2>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const active = isActive(pathname, item.href);
+                const Icon = item.icon;
 
-      {/* Navigation Groups */}
-
-      {/* Group: Main */}
-      <div className="flex flex-col gap-2">
-        <NavHeader text="Main" />
-        <NavLink href="/" icon={Home}>
-          <NavText text="Dashboard" />
-        </NavLink>
-        <NavLink href="/users" icon={Users}>
-          <NavText text="User Management" />
-        </NavLink>
-        <NavLink href="/messages" icon={MessageSquare}>
-          <NavText text="Messages" />
-        </NavLink>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-[0.85rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                      active
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+                        : "text-sidebar-foreground/62 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "size-[1.05rem] shrink-0",
+                        active
+                          ? "text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground/45 group-hover:text-sidebar-accent-foreground"
+                      )}
+                      strokeWidth={1.8}
+                    />
+                    <span className="flex-1">{item.label}</span>
+                    {active && (
+                      <ChevronRight className="size-3.5 opacity-70" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
 
-      {/* Group: Security */}
-      <div className="flex flex-col gap-2">
-        <NavHeader text="Security" />
-        <NavLink href="/surveillance" icon={Video}>
-          <NavText text="Surveillance" />
-        </NavLink>
-        <NavLink href="/reports" icon={Siren}>
-          <NavText text="Incident Reports" />
-        </NavLink>
-        <NavLink href="/alerts" icon={ShieldAlert}>
-          <NavText text="Alerts & Logs" />
-        </NavLink>
-        <NavLink href="/visitors" icon={ClipboardList}>
-          <NavText text="Visitor Logs" />
-        </NavLink>
-        <NavLink href="/map" icon={Map}>
-          <NavText text="Safety Map" />
-        </NavLink>
-      </div>
-
-      {/* Group: Operations */}
-      <div className="flex flex-col gap-2">
-        <NavHeader text="Operations" />
-        <NavLink href="/maintenance" icon={Wrench}>
-          <NavText text="Maintenance" />
-        </NavLink>
-        <NavLink href="/facilities" icon={Building}>
-          <NavText text="Facility Bookings" />
-        </NavLink>
-        <NavLink href="/finance" icon={CreditCard}>
-          <NavText text="Finance & Billing" />
-        </NavLink>
-      </div>
-
-      {/* Group: Content */}
-      <div className="flex flex-col gap-2">
-        <NavHeader text="Content" />
-        <NavLink href="/announcements" icon={Megaphone}>
-          <NavText text="Announcements" />
-        </NavLink>
-        <NavLink href="/moderation" icon={ShieldCheck}>
-          <NavText text="Content Moderation" />
-        </NavLink>
-        <NavLink href="/ads" icon={Megaphone}>
-          <NavText text="Ad Campaigns" />
-        </NavLink>
-        <NavLink href="/social" icon={Globe}>
-          <NavText text="Social" />
-        </NavLink>
+      <div className="mt-auto pt-6">
+        <div className="rounded-2xl border border-white/8 bg-white/[0.035] p-3.5">
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+            </span>
+            Systems operational
+          </div>
+          <p className="mt-1.5 text-[0.7rem] leading-5 text-sidebar-foreground/42">
+            Monitoring, access, and response services are connected.
+          </p>
+        </div>
+        <p className="mt-3 px-2 text-[0.65rem] text-sidebar-foreground/28">
+          Guardora Control · v1.0
+        </p>
       </div>
     </nav>
   );
