@@ -1,5 +1,12 @@
 FROM node:20-slim
 
+# Hugging Face injects a `git config` step into Space builds, so git has to be
+# present in the image even though the application never calls it. node:20-slim
+# does not include it.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git \
+ && rm -rf /var/lib/apt/lists/*
+
 # Hugging Face Spaces runs containers as uid 1000. node:20-slim already ships a
 # "node" user at that uid, so reuse it — adding a second user with the same uid
 # fails the build.
