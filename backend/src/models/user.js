@@ -213,8 +213,11 @@ userSchema.pre("save", async function (next) {
   });
   
   userSchema.methods.getJwtToken = function () {
+    // jsonwebtoken rejects an undefined expiresIn outright, so this needs a
+    // default like every other optional setting — a missing variable must not
+    // be the difference between working and broken sign-in.
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: process.env.JWT_EXPIRES,
+      expiresIn: process.env.JWT_EXPIRES || "30d",
     });
   };
   
