@@ -8,7 +8,6 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { STORAGE_BASE_URL } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export default function BannedPersonsTab({
@@ -241,16 +240,19 @@ export default function BannedPersonsTab({
               key={person._id}
               className="flex items-center gap-4 border p-3 rounded"
             >
-              {person.profilePicture ? (
-                //eslint-disable-next-line
-                <img
-                  src={`${STORAGE_BASE_URL}${person.profilePicture}`}
-                  className="w-16 h-16 rounded object-cover"
-                  alt=""
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gray-300 rounded" />
-              )}
+              {/* Enrolment photos are biometric data held in the database and
+                  served through the authenticated proxy, so this cannot be a
+                  direct link to the API. Records enrolled before the move have
+                  no stored image; the placeholder background shows through. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/resident/banned-persons/${person._id}/image`}
+                className="w-16 h-16 rounded object-cover bg-gray-300"
+                alt=""
+                onError={(event) => {
+                  event.currentTarget.style.visibility = "hidden";
+                }}
+              />
 
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{person.name}</p>

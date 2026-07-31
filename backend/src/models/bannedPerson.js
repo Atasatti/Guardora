@@ -11,7 +11,22 @@ const bannedPersonSchema = new mongoose.Schema(
       required: true,
     },
     profilePicture: {
-      type: String, // URL or Base64
+      type: String, // Legacy on-disk path, retained for records created before
+      // enrolment images moved into the database.
+    },
+    // The enrolment photo is the biometric record: the face embedding is
+    // recomputed from it whenever the recognition service starts. Container
+    // disks do not survive a restart, so it is stored here instead — a face
+    // image is small enough (tens of KB) that the document limit is not a
+    // concern, and keeping it beside the record makes re-enrolment possible
+    // after any restart.
+    imageData: {
+      type: Buffer,
+      select: false,
+    },
+    imageMimeType: {
+      type: String,
+      default: null,
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,

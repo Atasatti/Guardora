@@ -1,9 +1,7 @@
+import fs from "node:fs/promises";
 import BannedPerson from "../models/bannedPerson.js";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
-import {
-  removeUploadFile,
-  storedUploadPath,
-} from "../config/uploads.js";
+import { removeUploadFile, uploadDiskPath } from "../config/uploads.js";
 import ErrorHandler from "../utils/ErrorHandler.js";
 import {
   enrollBannedPerson,
@@ -17,16 +15,21 @@ export const getBannedPersons = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, persons });
 });
 
+// The stored image is a biometric record, so it is never included in list or
+// create responses; callers fetch it from the dedicated image route instead.
+const withoutImage = (person) => {
+  const plain = person.toObject ? person.toObject() : { ...person };
+  delete plain.imageData;
+  return plain;
+};
+
 export const addBannedPerson = catchAsyncErrors(async (req, res, next) => {
   const name = String(req.body.name || "").trim();
   const reason = String(req.body.reason || "").trim();
+  const uploadedFilename = req.file?.filename || null;
 
-  const profilePicture = req.file
-    ? storedUploadPath(req.file.filename, { leadingSlash: true })
-    : null;
-
-  if (!name || !reason || !profilePicture) {
-    removeUploadFile(profilePicture);
+  if (!name || !reason || !uploadedFilename) {
+    if (uploadedFilename) removeUploadFile(uploadedFilename);
     return next(
       new ErrorHandler(
         "Name, reason, and a clear enrollment photo are required",
@@ -35,10 +38,17 @@ export const addBannedPerson = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+  // Read the upload into the record. The container disk is wiped on every
+  // restart, and this image is what the recognition gallery is rebuilt from,
+  // so the bytes have to outlive the filesystem.
+  const imageData = await fs.readFile(uploadDiskPath(uploadedFilename));
+  const imageMimeType = req.file.mimetype || "application/octet-stream";
+
   const person = new BannedPerson({
     name,
     reason,
-    profilePicture,
+    imageData,
+    imageMimeType,
     addedBy: req.user?._id || "68dbdd492b2ee177716740c3",
   });
 
@@ -47,7 +57,8 @@ export const addBannedPerson = catchAsyncErrors(async (req, res, next) => {
     await enrollBannedPerson({
       identityId: person._id,
       name: person.name,
-      profilePicture: person.profilePicture,
+      imageData,
+      imageMimeType,
     });
     enrolled = true;
     await person.save();
@@ -62,21 +73,43 @@ export const addBannedPerson = catchAsyncErrors(async (req, res, next) => {
     if (enrolled) {
       await removeBannedPersonFromAi(person._id).catch(() => {});
     }
-    removeUploadFile(profilePicture);
     return next(error);
+  } finally {
+    // The upload was only ever a staging step.
+    removeUploadFile(uploadedFilename);
   }
 
   res.status(201).json({
     success: true,
-    person,
+    person: withoutImage(person),
     message: "Person added and enrolled in live face recognition",
   });
 });
 
+export const getBannedPersonImage = catchAsyncErrors(async (req, res, next) => {
+  const person = await BannedPerson.findById(req.params.id).select(
+    "+imageData imageMimeType"
+  );
+  if (!person?.imageData) {
+    return next(new ErrorHandler("Enrollment image not found", 404));
+  }
+  res.setHeader(
+    "Content-Type",
+    person.imageMimeType || "application/octet-stream"
+  );
+  res.setHeader("Cache-Control", "private, max-age=300");
+  res.send(person.imageData);
+});
+
+// Rebuilds the recognition gallery from the database. This is the recovery
+// path after the AI service restarts and loses its in-container gallery.
 export const syncBannedPersons = catchAsyncErrors(async (req, res) => {
   const persons = await BannedPerson.find({
-    profilePicture: { $exists: true, $nin: [null, ""] },
-  });
+    $or: [
+      { imageData: { $exists: true, $ne: null } },
+      { profilePicture: { $exists: true, $nin: [null, ""] } },
+    ],
+  }).select("+imageData");
   const synced = [];
   const failed = [];
 
@@ -85,6 +118,8 @@ export const syncBannedPersons = catchAsyncErrors(async (req, res) => {
       await enrollBannedPerson({
         identityId: person._id,
         name: person.name,
+        imageData: person.imageData,
+        imageMimeType: person.imageMimeType,
         profilePicture: person.profilePicture,
       });
       synced.push({ id: person._id, name: person.name });

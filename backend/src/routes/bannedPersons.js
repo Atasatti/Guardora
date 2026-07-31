@@ -7,6 +7,7 @@ import {
 import {
   getBannedPersons,
   addBannedPerson,
+  getBannedPersonImage,
   syncBannedPersons,
   unbanPerson,
   getBannedPersonTimeline,
@@ -29,6 +30,13 @@ router.post(
   authorizePermissions("MANAGE_SURVEILLANCE"),
   upload.single("image"),
   addBannedPerson
+);
+router.get(
+  "/:id/image",
+  isUserAuthenticated,
+  authorizeRoles("ADMIN", "MODERATOR"),
+  authorizePermissions("MANAGE_SURVEILLANCE"),
+  getBannedPersonImage
 );
 router.post(
   "/sync",

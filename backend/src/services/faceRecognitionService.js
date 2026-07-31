@@ -61,12 +61,27 @@ const requestAi = async (pathname, options = {}) => {
 export const enrollBannedPerson = async ({
   identityId,
   name,
+  imageData,
+  imageMimeType,
   profilePicture,
 }) => {
-  const imagePath = uploadDiskPath(profilePicture);
-  const image = await fs.readFile(imagePath);
-  const extension = path.extname(imagePath).toLowerCase();
-  const mimeType = mimeTypes[extension] || "application/octet-stream";
+  // Prefer the stored bytes. Records created before enrolment images moved
+  // into the database still carry an on-disk path, so fall back to it.
+  let image = imageData;
+  let mimeType = imageMimeType;
+
+  if (!image) {
+    if (!profilePicture) {
+      const error = new Error("No enrollment image is stored for this person");
+      error.statusCode = 422;
+      throw error;
+    }
+    const imagePath = uploadDiskPath(profilePicture);
+    image = await fs.readFile(imagePath);
+    mimeType =
+      mimeTypes[path.extname(imagePath).toLowerCase()] ||
+      "application/octet-stream";
+  }
 
   return requestAi("/gallery/enroll", {
     method: "POST",
