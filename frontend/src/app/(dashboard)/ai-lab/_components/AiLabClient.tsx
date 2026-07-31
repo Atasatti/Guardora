@@ -28,7 +28,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { API_BASE_URL } from "@/lib/api-client";
+import { getAiLabModels, runAiLabTest } from "@/lib/actions/ai-lab";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -176,17 +176,13 @@ export default function AiLabClient() {
     const loadModels = async () => {
       setModelsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/ai-lab/models`, {
-          credentials: "include",
-          cache: "no-store",
-        });
-        const payload = await response.json();
-        if (!response.ok) {
+        const payload = await getAiLabModels();
+        if (!payload.success) {
           throw new Error(payload.message || "Could not load AI models");
         }
         if (!active) return;
 
-        const loadedModels = (payload.models || []) as LabModel[];
+        const loadedModels = payload.models as LabModel[];
         setModels(loadedModels);
         const firstReady =
           loadedModels.find(
@@ -300,13 +296,8 @@ export default function AiLabClient() {
       if (isTextModel) formData.append("text", text.trim());
       if (selectedFile) formData.append("file", selectedFile);
 
-      const response = await fetch(`${API_BASE_URL}/ai-lab/test`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      const payload = await response.json();
-      if (!response.ok) {
+      const payload = await runAiLabTest(formData);
+      if (!payload.success) {
         throw new Error(payload.message || "AI analysis failed");
       }
       setResult(payload.result as LabResult);

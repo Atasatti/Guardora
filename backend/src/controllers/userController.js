@@ -183,6 +183,22 @@ const activateUser = catchAsyncErrors(async (req, res, next) => {
   sendToken(user, 201, res);
 });
 
+// Lockout is a second line of defence behind the per-IP rate limit on this
+// route. Because it keys on the account rather than the caller, a low
+// threshold lets anyone who knows an address lock its owner out at will, so it
+// is set high enough that only sustained guessing reaches it.
+const LOGIN_MAX_ATTEMPTS = Math.max(
+  Number.parseInt(process.env.LOGIN_MAX_ATTEMPTS || "10", 10) || 10,
+  3
+);
+const LOGIN_LOCK_MS =
+  Math.max(
+    Number.parseInt(process.env.LOGIN_LOCK_MINUTES || "15", 10) || 15,
+    1
+  ) *
+  60 *
+  1000;
+
 // Login user
 const loginUser = catchAsyncErrors(async (req, res, next) => {
   const email = String(req.body.email || "").trim().toLowerCase();
@@ -238,8 +254,8 @@ const loginUser = catchAsyncErrors(async (req, res, next) => {
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     user.failedLoginAttempts += 1;
-    if (user.failedLoginAttempts >= 3) {
-      user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+    if (user.failedLoginAttempts >= LOGIN_MAX_ATTEMPTS) {
+      user.lockUntil = new Date(Date.now() + LOGIN_LOCK_MS);
       user.failedLoginAttempts = 0;
     }
     await user.save();
