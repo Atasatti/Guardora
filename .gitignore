@@ -23,6 +23,9 @@
 **/.env.*
 !**/.env.example
 
+# Internal design notes kept out of the published repository
+**/*.private.md
+
 # Editor and operating-system files
 .DS_Store
 .idea/
