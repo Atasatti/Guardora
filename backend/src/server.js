@@ -1,4 +1,5 @@
 import http from "http";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import express from "express";
 import dotenv from "dotenv";
@@ -236,6 +237,15 @@ app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
 
 // API Routes
+// Unauthenticated liveness probe for the hosting platform. Deliberately
+// discloses nothing about configuration or data.
+app.get("/healthz", (req, res) => {
+  res.json({
+    status: "ok",
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+  });
+});
+
 app.use("/api/users", usersRouter);
 app.use("/api/announcements", announcementsRouter);
 app.use("/api/facilities", facilitiesRouter);

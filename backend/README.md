@@ -1,3 +1,13 @@
+---
+title: Guardora API
+emoji: 🛡️
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Guardora backend
 
 Express and Socket.IO API for the Guardora web administration dashboard.
