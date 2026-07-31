@@ -1,15 +1,16 @@
 FROM node:20-slim
 
-# Hugging Face Spaces runs containers as uid 1000.
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH
+# Hugging Face Spaces runs containers as uid 1000. node:20-slim already ships a
+# "node" user at that uid, so reuse it — adding a second user with the same uid
+# fails the build.
+USER node
+ENV HOME=/home/node PATH=/home/node/.local/bin:$PATH
 WORKDIR $HOME/app
 
-COPY --chown=user package.json package-lock.json ./
+COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY --chown=user . .
+COPY --chown=node:node . .
 
 ENV NODE_ENV=production PORT=7860 HOST=0.0.0.0
 EXPOSE 7860
