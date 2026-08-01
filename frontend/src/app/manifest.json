@@ -1,7 +1,20 @@
 {
+  "id": "/",
   "name": "Guardora Control",
   "short_name": "Guardora",
+  "description": "Monitor risks, coordinate access, and keep daily operations moving from a trusted command center.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#071821",
+  "background_color": "#f4f7f9",
   "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
@@ -12,10 +25,13 @@
       "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "theme_color": "#071821",
-  "background_color": "#f4f7f9",
-  "display": "standalone"
+  ]
 }
